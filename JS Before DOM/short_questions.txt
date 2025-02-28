@@ -1,0 +1,55 @@
+1. var, let, const are the types of variable declaration in javascript.
+	var uses function scope, while let and const uses block scopes
+	suppose,
+	var x = 2;
+	x is accessible throughout the code
+	but if we declare 
+	{
+		let y = 2;
+		const z = 3;
+	}
+	in this case y and z are only accessible within this block.
+.....................................................................................
+.....................................................................................
+
+2. Clousure in Javascript actually defines way of some conventions how JS syntax will be used.
+.....................................................................................
+.....................................................................................
+
+3. map() is actually a container in JS, which works with key value pairs. Normally Keys are working like indexes and value is working like values of the keys.
+
+filter() is used for separating objects based on some specific properties.
+
+reduce() is used for actually for simulations. On each iterations array size decreases by 1. when array size is 1 it will return the final result.
+
+.....................................................................................
+.....................................................................................
+4. In Javascript asynchronous operations uses 
+	async, await and Promise keywords
+	Normally, async makes a function return a promise
+	and await makes a function wait for a promise
+	N.B: to use await you must have to use async function.
+when we use async in JS, 
+	suppose, 
+async function f1() {
+  return "Hello";
+}
+it works like,
+function f1() {
+  return Promise.resolve("Hello");
+}
+then inside async function we need to wait for other functions for their execution.
+Then in this case we need to use await keyword.
+.....................................................................................
+.....................................................................................
+5. == vs === 
+== only compares when two values are same or not.
+but === not only compares values but also compares their type also.
+i.e:
+ 5 == '5' (true)
+ 5 === '5' (false)
+in first case their types are different but JS by default convert '5' to number for comparison. so in this case true will be returned
+but in 2nd case their types are different, so === will give false.
+All this issues occurred because of implicit type conversions of javascript.
+
+
