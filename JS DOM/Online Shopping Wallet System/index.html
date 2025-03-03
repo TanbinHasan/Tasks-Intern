@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <title>Online Shopping Wallet System</title>
+  </head>
+  <body>
+    <!-- Login Page -->
+    <div id="loginPage" class="page">
+      <h1>Online Shopping Wallet System</h1>
+      <div class="username">
+        <span>Username: </span>
+        <input id="username_input" type="text" placeholder="Only Alphanumeric is allowed" />
+      </div>
+      <div class="password">
+        <span>Password: </span>
+        <input id="password_input" type="password" placeholder="Enter your password" />
+      </div>
+      <button id="loginBtn">Log in</button>
+      <div class="register">
+        <span>Create an account? </span>
+        <button id="registerBtn">Register</button>
+      </div>
+    </div>
+
+    <!-- Register Page -->
+    <div id="registerPage" class="page hidden">
+      <h1>Create your account</h1>
+      <div class="r_username">
+        <span>Username: </span>
+        <input id="r_username_input" type="text" placeholder="Only Alphanumeric is allowed" />
+      </div>
+      <div class="r_password">
+        <span>Password: </span>
+        <input id="r_password_input" type="password" placeholder="Enter your password" />
+      </div>
+      <div class="confirm_password">
+        <span>Confirm Password: </span>
+        <input id="confirm_password_input" type="password" placeholder="Retype your password" />
+      </div>
+      <button id="create_account">Create Account</button>
+      <button id="backToLogin">Back to Login</button>
+    </div>
+    
+    <!-- Wallet Page -->
+    <div id="walletPage" class="page hidden">
+      <h1>Wallet Dashboard</h1>
+      <div class="wallet_management">
+        <span>Current Balance: </span>
+        <input id="cur_balance" type="text" readonly />
+        <div class="cashinclass">
+          <input id="cashin" type="number" placeholder="Enter amount >= 500" />
+          <button id="cashInBtn">Cash In</button>
+        </div>
+        <div class="cashoutclass">
+          <input id="cashout" type="number" placeholder="Cashout <= Current Balance" />
+          <button id="cashOutBtn">Cash Out</button>
+        </div><br>
+        <button id="buyProducts">Buy Products</button>
+        <button id="logoutBtn">Log Out</button>
+      </div>
+    </div>
+
+    <!-- Product Page -->
+  <div id="productPage" class="page hidden">
+    <h1>Product Page</h1>
+    <div id="product_items">
+
+    </div>
+
+    <button id="backToDashboardBtn">Back to Dashboard</button>
+  </div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
