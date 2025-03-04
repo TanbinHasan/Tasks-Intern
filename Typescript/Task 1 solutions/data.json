@@ -1,0 +1,389 @@
+{
+  "products": [
+    {
+      "product_id": "P1001",
+      "name": "Laptop Pro X",
+      "category": "Electronics",
+      "price": 1200,
+      "stock": 50,
+      "reviews": [
+        {
+          "user_id": "U101",
+          "rating": 4,
+          "comment": "Great performance, but a bit pricey."
+        },
+        {
+          "user_id": "U102",
+          "rating": 5,
+          "comment": "Excellent laptop! Highly recommended."
+        },
+        {
+          "user_id": "U114",
+          "rating": 4,
+          "comment": "Fast and efficient."
+        },
+        {
+          "user_id": "U115",
+          "rating": 3,
+          "comment": "A little heavy."
+        }
+      ],
+      "features": [
+        "Intel i7",
+        "16GB RAM",
+        "512GB SSD",
+        "Dedicated GPU"
+      ]
+    },
+    {
+      "product_id": "P1002",
+      "name": "Wireless Headphones",
+      "category": "Electronics",
+      "price": 150,
+      "stock": 100,
+      "reviews": [
+        {
+          "user_id": "U103",
+          "rating": 4,
+          "comment": "Good sound quality and comfortable."
+        },
+        {
+          "user_id": "U104",
+          "rating": 3,
+          "comment": "Battery life could be better."
+        },
+        {
+          "user_id": "U116",
+          "rating": 5,
+          "comment": "Amazing sound!"
+        },
+        {
+          "user_id": "U117",
+          "rating": 2,
+          "comment": "Poor connectivity"
+        }
+      ],
+      "features": [
+        "Bluetooth 5.0",
+        "Noise Cancellation",
+        "20 Hour Battery",
+        "Touch Controls"
+      ]
+    },
+    {
+      "product_id": "P1003",
+      "name": "Running Shoes",
+      "category": "Apparel",
+      "price": 80,
+      "stock": 75,
+      "reviews": [
+        {
+          "user_id": "U105",
+          "rating": 5,
+          "comment": "Very comfortable and lightweight."
+        },
+        {
+          "user_id": "U106",
+          "rating": 4,
+          "comment": "Good for daily runs."
+        },
+        {
+          "user_id": "U107",
+          "rating": 5,
+          "comment": "Great product, excellent for marathons"
+        },
+        {
+          "user_id": "U118",
+          "rating": 3,
+          "comment": "Not durable enough."
+        },
+        {
+          "user_id": "U119",
+          "rating": 4,
+          "comment": "Fits perfectly."
+        }
+      ],
+      "features": [
+        "Breathable Fabric",
+        "Shock Absorbing Sole",
+        "Reflective Details"
+      ]
+    },
+    {
+      "product_id": "P1004",
+      "name": "Cookbook: World Cuisine",
+      "category": "Books",
+      "price": 30,
+      "stock": 30,
+      "reviews": [
+        {
+          "user_id": "U108",
+          "rating": 4,
+          "comment": "Great recipes and beautiful photos."
+        },
+        {
+          "user_id": "U109",
+          "rating": 5,
+          "comment": "A must-have for food lovers."
+        },
+        {
+          "user_id": "U120",
+          "rating": 5,
+          "comment": "Incredible variety of recipes."
+        },
+        {
+          "user_id": "U121",
+          "rating": 3,
+          "comment": "Some recipes are too complex."
+        }
+      ],
+      "features": [
+        "Over 200 Recipes",
+        "Full-Color Photos",
+        "Ingredient Index"
+      ]
+    },
+    {
+      "product_id": "P1005",
+      "name": "Smart Watch",
+      "category": "Electronics",
+      "price": 250,
+      "stock": 60,
+      "reviews": [
+        {
+          "user_id": "U110",
+          "rating": 4,
+          "comment": "Accurate fitness tracking and good battery life."
+        },
+        {
+          "user_id": "U111",
+          "rating": 3,
+          "comment": "The interface could be more intuitive."
+        },
+        {
+          "user_id": "U122",
+          "rating": 5,
+          "comment": "Love the sleep tracking feature."
+        },
+        {
+          "user_id": "U123",
+          "rating": 2,
+          "comment": "Connectivity issues with my phone."
+        }
+      ],
+      "features": [
+        "Heart Rate Monitor",
+        "GPS",
+        "Water Resistant",
+        "Sleep Tracking"
+      ]
+    },
+    {
+      "product_id": "P1006",
+      "name": "Cotton T-Shirt",
+      "category": "Apparel",
+      "price": 20,
+      "stock": 150,
+      "reviews": [
+        {
+          "user_id": "U112",
+          "rating": 5,
+          "comment": "Very soft and comfortable."
+        },
+        {
+          "user_id": "U113",
+          "rating": 4,
+          "comment": "Good quality for the price."
+        },
+        {
+          "user_id": "U124",
+          "rating": 5,
+          "comment": "Great fit and feel."
+        },
+        {
+          "user_id": "U125",
+          "rating": 3,
+          "comment": "Shrinks a little after washing."
+        }
+      ],
+      "features": [
+        "100% Cotton",
+        "Machine Washable",
+        "Multiple Colors"
+      ]
+    },
+    {
+      "product_id": "P1007",
+      "name": "Digital Camera",
+      "category": "Electronics",
+      "price": 600,
+      "stock": 25,
+      "reviews": [
+        {
+          "user_id": "U126",
+          "rating": 5,
+          "comment": "Excellent image quality."
+        },
+        {
+          "user_id": "U127",
+          "rating": 4,
+          "comment": "Easy to use, great for beginners."
+        },
+        {
+          "user_id": "U128",
+          "rating": 4,
+          "comment": "Good zoom capabilities."
+        },
+        {
+          "user_id": "U129",
+          "rating": 3,
+          "comment": "Low light performance could be better."
+        }
+      ],
+      "features": [
+        "24MP Sensor",
+        "4K Video",
+        "Optical Zoom"
+      ]
+    },
+    {
+      "product_id": "P1008",
+      "name": "Yoga Mat",
+      "category": "Fitness",
+      "price": 25,
+      "stock": 80,
+      "reviews": [
+        {
+          "user_id": "U130",
+          "rating": 5,
+          "comment": "Very comfortable and non-slip."
+        },
+        {
+          "user_id": "U131",
+          "rating": 4,
+          "comment": "Good thickness for support."
+        },
+        {
+          "user_id": "U132",
+          "rating": 5,
+          "comment": "Easy to clean."
+        },
+        {
+          "user_id": "U133",
+          "rating": 3,
+          "comment": "A bit heavy to carry."
+        }
+      ],
+      "features": [
+        "Non-Slip Surface",
+        "Eco-Friendly Material",
+        "Carrying Strap"
+      ]
+    },
+    {
+      "product_id": "P1009",
+      "name": "Novel: Sci-Fi Adventure",
+      "category": "Books",
+      "price": 15,
+      "stock": 60,
+      "reviews": [
+        {
+          "user_id": "U134",
+          "rating": 5,
+          "comment": "Engaging storyline and great characters."
+        },
+        {
+          "user_id": "U135",
+          "rating": 4,
+          "comment": "Kept me hooked till the end."
+        },
+        {
+          "user_id": "U136",
+          "rating": 5,
+          "comment": "Amazing world building."
+        },
+        {
+          "user_id": "U137",
+          "rating": 3,
+          "comment": "Ending was a bit rushed."
+        }
+      ],
+      "features": [
+        "Hardcover",
+        "350 Pages",
+        "Award-Winning Author"
+      ]
+    },
+    {
+      "product_id": "P1010",
+      "name": "Bluetooth Speaker",
+      "category": "Electronics",
+      "price": 80,
+      "stock": 90,
+      "reviews": [
+        {
+          "user_id": "U138",
+          "rating": 4,
+          "comment": "Good sound quality for its size."
+        },
+        {
+          "user_id": "U139",
+          "rating": 3,
+          "comment": "Battery life could be better."
+        },
+        {
+          "user_id": "U140",
+          "rating": 5,
+          "comment": "Compact and portable."
+        },
+        {
+          "user_id": "U141",
+          "rating": 4,
+          "comment": "Easy to pair with devices."
+        }
+      ],
+      "features": [
+        "Portable",
+        "Bluetooth 5.0",
+        "10 Hour Battery",
+        "Water Resistant"
+      ]
+    },
+    {
+      "product_id": "P1011",
+      "name": "Electric Kettle",
+      "category": "Kitchen",
+      "price": 45,
+      "stock": 0,
+      "reviews": [],
+      "features": [
+        "1.7L Capacity",
+        "Auto Shut-Off",
+        "Stainless Steel"
+      ]
+    },
+    {
+      "product_id": "P1012",
+      "name": "Puzzle Set",
+      "category": "Toys",
+      "price": 12,
+      "stock": 200,
+      "reviews": [
+        {
+          "user_id": "U142",
+          "rating": 4,
+          "comment": "Fun for kids!"
+        },
+        {
+          "user_id": "U143",
+          "rating": 5,
+          "comment": "Great family activity."
+        }
+      ],
+      "features": [
+        "500 Pieces",
+        "Colorful Design"
+      ]
+    }
+  ]
+}

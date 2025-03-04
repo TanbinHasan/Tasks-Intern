@@ -18,8 +18,8 @@ function f() {
         word = word.toLowerCase();
         let len = word.length;
         if ((word[len - 1] >= 'a' && word[len - 1] <= 'z') == false) word = word.substring(0, len - 1);
-        if (pos.has(word)) ++x;
-        if (neg.has(word)) ++y;
+        if (pos.has(word)) x = 1;
+        if (neg.has(word)) y = 1;
       }
       let obj1 = new Object();
       obj1.product_id = product.product_id;
