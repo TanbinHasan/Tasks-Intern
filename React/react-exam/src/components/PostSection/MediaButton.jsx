@@ -1,18 +1,18 @@
-import React, { useRef } from 'react';
+import { useRef } from "react";
 
 const MediaButton = ({ type, onClick, isSelected }) => {
   const fileInputRef = useRef(null);
 
   const handleButtonClick = () => {
     if (type === 'photo' || type === 'video') {
-      fileInputRef.current.click();
+      fileInputRef.current.click(); // Trigger file input click
     }
   };
-
+  
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      onClick(type, selectedFile);
+      onClick(type, selectedFile); // Pass the selected file back to the parent
     }
   };
 

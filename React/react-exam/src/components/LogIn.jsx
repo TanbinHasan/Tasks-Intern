@@ -23,21 +23,20 @@ export default function LogIn() {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const user = JSON.parse(localStorage.getItem(email));
-    if (user && user.password === password) {
-      setActiveUser(user);
+    const storedUser = JSON.parse(localStorage.getItem(email));
+    if (storedUser && storedUser.password === password) {
+      setActiveUser({ email, password });
+
+      localStorage.setItem('activeUser', JSON.stringify({ email, password }));
       localStorage.setItem('active', true);
-      
+
       if (rememberMe) {
-        localStorage.setItem('rememberedUser', JSON.stringify({
-          email: email,
-          password: password
-        }));
+        localStorage.setItem('rememberedUser', JSON.stringify({ email, password }));
       } else {
         localStorage.removeItem('rememberedUser');
       }
-      
-      login(user);
+
+      login({ email, password });
       navigate('/feed');
     } else {
       setError('Invalid credentials');

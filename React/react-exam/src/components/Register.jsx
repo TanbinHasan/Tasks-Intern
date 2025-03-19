@@ -95,7 +95,7 @@ function Register() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+  
     // Mark all fields as touched when form is submitted
     setTouched({
       email: true,
@@ -103,7 +103,7 @@ function Register() {
       confirmPassword: true,
       terms: true,
     });
-
+  
     // Validate the form
     const validationError = validateForm();
     if (validationError) {
@@ -112,25 +112,36 @@ function Register() {
       alert(validationError);
       return;
     }
-
+  
+    // Check if the email already exists in localStorage
+    if (localStorage.getItem(email)) {
+      setError("Email already exists. Please choose another.");
+      alert("Email already exists. Please choose another.");
+      return;
+    }
+  
+    // Save the user data (email and password) to localStorage
     const userData = { email, password };
-    localStorage.setItem(email, JSON.stringify(userData));
+    localStorage.setItem(email, JSON.stringify(userData));  // Storing user data by email key
+    localStorage.setItem('activeUser', JSON.stringify({ email, password }));  // Also store active user
     alert("Registration successful!");
-    setError("");
-    navigate("/");
+  
+    setError("");  // Clear any previous errors
+    navigate("/");  // Navigate to the homepage or login page after successful registration
   };
-
+  
   const handleEmailChange = (e) => {
     const value = e.target.value;
     setEmail(value);
     setTouched({ ...touched, email: true });
-
+  
+    // Check if the email is already in localStorage
     if (value && localStorage.getItem(value) !== null) {
       setError("Email already exists. Please choose another.");
     } else {
       setError("");
     }
-  };
+  };  
 
   const handlePasswordChange = (e) => {
     const value = e.target.value;

@@ -1,6 +1,6 @@
 import React from 'react'
 import PostSection from './PostSection/PostSection'
-import NewsFeedSection from './NewsFeedSection/NewsFeedSection'
+import AllPosts from './NewsFeedSection/AllPosts'
 
 const Feed = () => {
 
@@ -1717,7 +1717,7 @@ const Feed = () => {
                       </div>
                       {/*For Mobile End*/}
                       <PostSection></PostSection>
-                      <NewsFeedSection></NewsFeedSection>
+                      <AllPosts></AllPosts>
                     </div>
                   </div>
                 </div>
