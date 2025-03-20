@@ -85,7 +85,9 @@ const RCS_Btn = ({ post }) => {
                   d="M6.938 9.313h7.125M10.5 14.063h3.563"
                 />
               </svg>
-              Comment {post.comments.length > 0 && `(${post.comments.length})`}
+              {post.comments.length === 0 ? 'comment' : `(${post.comments.length} ${post.comments.length > 1 ? 'comments' : 'comment'})`}
+
+
             </span>
           </span>
         </button>
