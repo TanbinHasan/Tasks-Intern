@@ -5,14 +5,14 @@ const MediaButton = ({ type, onClick, isSelected }) => {
 
   const handleButtonClick = () => {
     if (type === 'photo' || type === 'video') {
-      fileInputRef.current.click(); // Trigger file input click
+      fileInputRef.current.click();
     }
   };
   
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
-      onClick(type, selectedFile); // Pass the selected file back to the parent
+      onClick(type, selectedFile);
     }
   };
 

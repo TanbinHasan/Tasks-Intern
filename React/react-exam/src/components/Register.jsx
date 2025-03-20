@@ -17,7 +17,6 @@ function Register() {
   });
   const [isPasswordMatched, setIsPasswordMatched] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
-  // Add touched state to track which fields have been interacted with
   const [touched, setTouched] = useState({
     email: false,
     password: false,
@@ -44,7 +43,6 @@ function Register() {
     }
   }, [password, confirmPassword]);
 
-  // Check form validity
   useEffect(() => {
     setIsFormValid(
       email && 
@@ -59,7 +57,6 @@ function Register() {
     );
   }, [email, password, confirmPassword, isPasswordMatched, passwordCriteria, termsAccepted]);
 
-  // Validate all form fields and return specific errors
   const validateForm = () => {
     if (!email) {
       return "Email is required.";
@@ -96,7 +93,6 @@ function Register() {
   const handleSubmit = (e) => {
     e.preventDefault();
   
-    // Mark all fields as touched when form is submitted
     setTouched({
       email: true,
       password: true,
@@ -104,30 +100,26 @@ function Register() {
       terms: true,
     });
   
-    // Validate the form
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
-      // Display alert for better visibility
       alert(validationError);
       return;
     }
   
-    // Check if the email already exists in localStorage
     if (localStorage.getItem(email)) {
       setError("Email already exists. Please choose another.");
       alert("Email already exists. Please choose another.");
       return;
     }
   
-    // Save the user data (email and password) to localStorage
     const userData = { email, password };
-    localStorage.setItem(email, JSON.stringify(userData));  // Storing user data by email key
-    localStorage.setItem('activeUser', JSON.stringify({ email, password }));  // Also store active user
+    localStorage.setItem(email, JSON.stringify(userData));
+    localStorage.setItem('activeUser', JSON.stringify({ email, password }));
     alert("Registration successful!");
   
-    setError("");  // Clear any previous errors
-    navigate("/");  // Navigate to the homepage or login page after successful registration
+    setError("");
+    navigate("/");
   };
   
   const handleEmailChange = (e) => {
@@ -135,7 +127,6 @@ function Register() {
     setEmail(value);
     setTouched({ ...touched, email: true });
   
-    // Check if the email is already in localStorage
     if (value && localStorage.getItem(value) !== null) {
       setError("Email already exists. Please choose another.");
     } else {
@@ -166,7 +157,6 @@ function Register() {
     }
   };
 
-  // Validate on blur handlers
   const handleEmailBlur = () => {
     setTouched({ ...touched, email: true });
     if (!email) {
@@ -179,7 +169,7 @@ function Register() {
     if (!password) {
       setError("Password is required.");
     } else if (!passwordCriteria.length || !passwordCriteria.uppercase || 
-               !passwordCriteria.lowercase || !passwordCriteria.number) {
+      !passwordCriteria.lowercase || !passwordCriteria.number) {
       setError("Password must meet all the required criteria.");
     }
   };

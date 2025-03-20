@@ -1,6 +1,8 @@
 import React from 'react'
+import { useUser } from '../../contexts/UserContext';
 
-const PostHeader = () => {
+const PostHeader = ({post}) => {
+  const { user } = useUser();
   return (
     <>
       <div className="_feed_inner_timeline_post_box">
@@ -13,10 +15,10 @@ const PostHeader = () => {
         </div>
         <div className="_feed_inner_timeline_post_box_txt">
           <h4 className="_feed_inner_timeline_post_box_title">
-            Karim Saif
+            {user.email}
           </h4>
           <p className="_feed_inner_timeline_post_box_para">
-            5 minute ago .<a href="#0">Public</a>
+            {post.timeAgo} .<a href="#0">Public</a>
           </p>
         </div>
       </div>

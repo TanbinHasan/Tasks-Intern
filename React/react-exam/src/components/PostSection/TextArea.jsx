@@ -8,7 +8,7 @@ const TextArea = ({ value, onChange }) => {
         placeholder="Write something"
         value={value}
         onChange={onChange}
-        rows={3} // Optional, you can adjust based on your design
+        rows={3}
       />
       <label className="_feed_textarea_label">Write something...</label>
     </div>

@@ -3,8 +3,10 @@ import MediaButtons from './MediaButtons';
 import TextArea from './TextArea';
 import PostButton from './PostButton';
 import { usePostContext } from '../../contexts/PostContext';
+import { useUser } from '../../contexts/UserContext';
 
 const PostSection = ({ userEmail }) => {
+  const { user } = useUser();
   const { addPost } = usePostContext();
   const [postContent, setPostContent] = useState('');
   const [mediaType, setMediaType] = useState('');
@@ -12,9 +14,7 @@ const PostSection = ({ userEmail }) => {
 
   const handlePostClick = () => {
     if (postContent.trim() !== '') {
-      // Add the post using the context method
-      addPost(postContent, mediaType, mediaFile, userEmail); // Pass the user email along with the post data
-      // Clear the input fields after posting
+      addPost(postContent, mediaType, mediaFile, user.email);
       setPostContent('');
       setMediaType('');
       setMediaFile(null);
@@ -22,9 +22,9 @@ const PostSection = ({ userEmail }) => {
   };
 
   const handleMediaSelection = (type, file) => {
-    console.log('Selected media type:', type, 'File:', file); // Log to check if file is passed correctly
+    console.log('Selected media type:', type, 'File:', file);
     setMediaType(type);
-    setMediaFile(file); // Set the selected file
+    setMediaFile(file);
   };  
 
   return (

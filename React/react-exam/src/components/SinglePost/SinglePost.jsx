@@ -18,9 +18,9 @@ const SinglePost = ({ postId }) => {
       <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
         <PostContent post={post} /> {/* Pass post to PostContent */}
       </div>
-      <RCS_Counter />
-      <RCS_Btn />
-      <CommentSection />
+      <RCS_Counter post={post}/>
+      <RCS_Btn post={post}/>
+      <CommentSection postId={post.id}/>
     </>
   );
 }

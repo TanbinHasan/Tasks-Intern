@@ -1,6 +1,6 @@
 import React from 'react'
 
-const RC_Count = () => {
+const RC_Count = ({post}) => {
   return (
     <>
       <div className="_feed_inner_timeline_total_reacts _padd_r24 _padd_l24 _mar_b26">
@@ -36,10 +36,10 @@ const RC_Count = () => {
         </div>
         <div className="_feed_inner_timeline_total_reacts_txt">
           <p className="_feed_inner_timeline_total_reacts_para1">
-            <span>12</span> Comment
+            <span>{post.comments.length}</span> Comment
           </p>
           <p className="_feed_inner_timeline_total_reacts_para2">
-            <span>122</span> Share
+            <span>{0}</span> Share
           </p>
         </div>
       </div>

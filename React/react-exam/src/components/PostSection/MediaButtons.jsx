@@ -8,10 +8,9 @@ const MediaButtons = ({ onMediaClick }) => {
   const handleMediaClick = (type, file) => {
     setSelectedType(type);
     if (file) {
-      // Handle the uploaded file here (e.g., save it, display preview)
       console.log('Selected file:', file);
     }
-    onMediaClick(type, file); // Pass the selected media type and file back to parent
+    onMediaClick(type, file);
   };
 
   return (

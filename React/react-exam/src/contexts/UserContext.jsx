@@ -16,7 +16,6 @@ export const UserProvider = ({ children }) => {
     }
   }, []);
 
-  // Login function to authenticate user using email and password
   const login = (email, password) => {
     const storedUser = JSON.parse(localStorage.getItem(email));
     if (storedUser && storedUser.password === password) {
@@ -27,13 +26,11 @@ export const UserProvider = ({ children }) => {
     return false;
   };
 
-  // Set the active user
   const setActiveUser = (updatedUser) => {
     setUser(updatedUser);
-    localStorage.setItem('activeUser', JSON.stringify(updatedUser)); // Store only email and password
+    localStorage.setItem('activeUser', JSON.stringify(updatedUser));
   };
 
-  // Logout function
   const logout = () => {
     setUser(null);
     localStorage.removeItem('activeUser');

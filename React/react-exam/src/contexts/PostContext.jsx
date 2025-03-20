@@ -7,16 +7,16 @@ export const usePostContext = () => {
 };
 
 export const PostProvider = ({ children }) => {
-  const [posts, setPosts] = useState([]); // Initialize posts as an array
+  const [posts, setPosts] = useState([]);
 
-  // Helper function to format time (e.g., "5 minutes ago")
   const timeAgo = (timestamp) => {
+    if (!timestamp) return 'Just now';
     const now = Date.now();
     const diffInSeconds = Math.floor((now - timestamp) / 1000);
     const minutes = Math.floor(diffInSeconds / 60);
     const hours = Math.floor(diffInSeconds / 3600);
     const days = Math.floor(diffInSeconds / 86400);
-
+  
     if (minutes < 1) {
       return 'Just now';
     } else if (minutes < 60) {
@@ -26,21 +26,28 @@ export const PostProvider = ({ children }) => {
     } else {
       return `${days} day${days > 1 ? 's' : ''} ago`;
     }
-  };
+  };  
 
-  // Function to update timeAgo for all posts
   const updateTimeAgo = () => {
     const updatedPosts = posts.map(post => ({
       ...post,
-      timeAgo: timeAgo(post.timestamp)
+      timeAgo: timeAgo(post.timestamp),
+      comments: post.comments.map(comment => ({
+        ...comment,
+        timeAgo: timeAgo(comment.timestamp),
+        replies: comment.replies ? comment.replies.map(reply => ({
+          ...reply,
+          timeAgo: timeAgo(reply.timestamp),
+        })) : []
+      }))
     }));
 
     setPosts(updatedPosts);
-    localStorage.setItem('posts', JSON.stringify(updatedPosts)); // Store posts in localStorage
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
   };
 
   const addPost = (text, mediaType, mediaFile, email) => {
-    const timestamp = Date.now(); // Capture current time for the timestamp
+    const timestamp = Date.now();
     
     const newPostId = posts.length > 0 ? Math.max(...posts.map(post => post.id)) + 1 : 1;
     
@@ -48,7 +55,7 @@ export const PostProvider = ({ children }) => {
       id: newPostId,
       text,
       mediaType,
-      mediaFile, // Ensure the media file is passed here
+      mediaFile,
       email,
       likes: 0,
       comments: [],
@@ -56,41 +63,103 @@ export const PostProvider = ({ children }) => {
       timeAgo: timeAgo(timestamp),
     };
     
-    const updatedPosts = [newPost, ...posts]; // Add new post at the beginning
-    
-    console.log('Updated posts:', updatedPosts); // Verify mediaFile is stored correctly
-    
-    localStorage.setItem('posts', JSON.stringify(updatedPosts)); // Store updated posts in localStorage
+    const updatedPosts = [newPost, ...posts];
+        
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
   };
-  
+
+  const editPost = (id, newText, newMediaType, newMediaFile) => {
+    const updatedPosts = posts.map(post => {
+      if (post.id === id) {
+        return {
+          ...post,
+          text: newText || post.text,
+          mediaType: newMediaType !== undefined ? newMediaType : post.mediaType,
+          mediaFile: newMediaFile !== undefined ? newMediaFile : post.mediaFile,
+        };
+      }
+      return post;
+    });
+
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    setPosts(updatedPosts);
+    return true;
+  };
+
+  const deletePost = (id) => {
+    const filteredPosts = posts.filter(post => post.id !== id);
+    localStorage.setItem('posts', JSON.stringify(filteredPosts));
+    setPosts(filteredPosts);
+    return true;
+  };
+
   const likePost = (id) => {
     const updatedPosts = posts.map(post => 
       post.id === id ? { ...post, likes: post.likes + 1 } : post
     );
 
-    localStorage.setItem('posts', JSON.stringify(updatedPosts)); // Store updated posts in localStorage
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
   };
 
-  const addComment = (id, comment) => {
+  const addComment = (postId, comment) => {
     const updatedPosts = posts.map(post => {
-      if (post.id === id) {
-        const updatedComments = [comment, ...post.comments]; // Add new comment at the top
+      if (post.id === postId) {
+        const updatedComments = [comment, ...post.comments];
         return { ...post, comments: updatedComments };
       }
       return post;
     });
 
-    localStorage.setItem('posts', JSON.stringify(updatedPosts)); // Store updated posts in localStorage
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
   };
 
-  // Load posts from localStorage on initial render
+  const addReply = (postId, commentId, reply) => {
+    const updatedPosts = posts.map(post => {
+      if (post.id === postId) {
+        const updatedComments = post.comments.map(comment => {
+          if (comment.id === commentId) {
+            const replies = comment.replies || [];
+            return {
+              ...comment,
+              replies: [reply, ...replies]
+            };
+          }
+          return comment;
+        });
+        return { ...post, comments: updatedComments };
+      }
+      return post;
+    });
+
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    setPosts(updatedPosts);
+  };
+
+  const likeComment = (postId, commentId) => {
+    const updatedPosts = posts.map(post => {
+      if (post.id === postId) {
+        const updatedComments = post.comments.map(comment => {
+          if (comment.id === commentId) {
+            return { ...comment, likes: comment.likes + 1 };
+          }
+          return comment;
+        });
+        return { ...post, comments: updatedComments };
+      }
+      return post;
+    });
+
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    setPosts(updatedPosts);
+  };
+
   useEffect(() => {
     const savedPosts = localStorage.getItem('posts');
     if (savedPosts) {
-      setPosts(JSON.parse(savedPosts)); // Ensure the posts are loaded as an array
+      setPosts(JSON.parse(savedPosts));
     }
   }, []);
 
@@ -106,7 +175,16 @@ export const PostProvider = ({ children }) => {
   }, [posts]);
 
   return (
-    <PostContext.Provider value={{ posts, addPost, likePost, addComment }}>
+    <PostContext.Provider value={{ 
+      posts, 
+      addPost, 
+      editPost,
+      deletePost,
+      likePost, 
+      addComment,
+      addReply,
+      likeComment
+    }}>
       {children}
     </PostContext.Provider>
   );
