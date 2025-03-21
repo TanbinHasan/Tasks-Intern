@@ -26,17 +26,19 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
   
   const handleReply = () => {
     setShowReplyForm(!showReplyForm);
+    if (!showReplyForm) {
+      // When opening reply form, automatically show all replies
+      setShowAllReplies(true);
+    }
   };
 
   const handleViewPreviousReplies = () => {
-    setShowAllReplies(prevState => !prevState);
+    setShowAllReplies(true);
   };
 
   const handleNameClick = (e, userId) => {
     e.preventDefault();
-    // You can implement a proper profile navigation here in the future
     console.log(`Navigating to profile of user: ${userId || 'anonymous'}`);
-    // For now, just show an alert to demonstrate the click is working
     alert(`This would navigate to ${username}'s profile`);
   };
 
@@ -44,103 +46,61 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
     e.preventDefault();
     if (replyText.trim()) {
       const timestamp = Date.now();
-      // Use displayName if available, or fallback to a nicer name instead of email
       const displayName = user?.displayName || user?.name || 'Anonymous User';
       
       const newReply = {
         id: timestamp,
         text: replyText,
         username: displayName,
-        userId: user?.id || 'anonymous', // Store user ID for profile linking
+        userId: user?.id || 'anonymous',
         timestamp,
         timeAgo: 'Just now',
         likes: 0
       };
       
-      // Update local state immediately
       setLocalReplies(prev => [...prev, newReply]);
-      
-      // Show all replies when a new reply is added
       setShowAllReplies(true);
-      
-      // Then update in context
       addReply(postId, commentId, newReply);
       setReplyText('');
       setShowReplyForm(false);
     }
   };
 
-  // Determine which replies to show based on showAllReplies state
-  const displayReplies = showAllReplies ? localReplies : localReplies.slice(-2); // Show only 2 recent replies by default
-
-  // Reduced spacing in the commentStyle
-  const commentStyle = {
-    display: 'flex',
-    padding: '4px 16px', // Reduced from 8px to 4px
-    marginBottom: '2px', // Reduced from 8px to 2px
-    width: '100%',
-    boxSizing: 'border-box',
-  };
-
-  const commentAreaStyle = {
-    flex: 1,
-    marginLeft: '10px',
-  };
-
-  const commentContentStyle = {
-    backgroundColor: '#F0F2F5',
-    borderRadius: '18px',
-    padding: '8px 12px',
-    marginBottom: '2px', // Reduced from 4px to 2px
-    wordBreak: 'break-word',
-  };
-
-  const replyToggleStyle = {
-    fontSize: '0.85rem',
-    color: '#65676B',
-    cursor: 'pointer',
-    fontWeight: '600',
-    marginLeft: '8px',
-    background: 'none',
-    border: 'none',
-    padding: '3px 6px', // Reduced padding
-    borderRadius: '4px',
-  };
-
-  const replyContainerStyle = {
-    marginLeft: '40px',
-    marginTop: '2px', // Reduced from 4px to 2px
-  };
-
-  // Style for clickable username
-  const usernameLinkStyle = {
-    textDecoration: 'none',
-    fontWeight: 'bold',
-    color: '#050505',
-    cursor: 'pointer',
-    transition: 'color 0.2s ease',
-    ':hover': {
-      color: '#1877F2',
-      textDecoration: 'underline'
-    }
-  };
+  // Show the most recent replies if not showing all
+  const displayReplies = showAllReplies ? localReplies : (localReplies.length > 1 ? [localReplies[0], localReplies[localReplies.length-1]] : localReplies);
 
   return (
-    <div className="_comment_main" style={commentStyle}>
+    <div className="_comment_main" style={{
+      display: 'flex',
+      padding: '4px 16px',
+      width: '100%',
+      boxSizing: 'border-box',
+    }}>
       <div className="_comment_image">
         <a href="#" className="_comment_image_link" onClick={(e) => handleNameClick(e)}>
           <img 
             src="assets/images/txt_img.png" 
             alt="" 
             className="_comment_img1" 
-            style={{ width: '36px', height: '36px', borderRadius: '50%' }} 
+            style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
           />
         </a>
       </div>
-      <div className="_comment_area" style={commentAreaStyle}>
+      <div className="_comment_area" style={{
+        flex: 1,
+        marginLeft: '8px',
+      }}>
         <div className="_comment_details">
-          <div className="_comment_status" style={commentContentStyle}>
-            <div className="_comment_name" style={{ marginBottom: '2px' }}>
+          <div className="_comment_status" style={{
+            backgroundColor: '#F0F2F5',
+            borderRadius: '18px',
+            padding: '8px 12px',
+            marginBottom: '2px',
+            wordBreak: 'break-word',
+            display: 'inline-block',
+            maxWidth: '100%',
+          }}>
+            <div className="_comment_name" style={{ marginBottom: '1px' }}>
               <a 
                 href="#" 
                 onClick={(e) => handleNameClick(e)} 
@@ -149,22 +109,23 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
                 <h4 
                   className="_comment_name_title" 
                   style={{ 
-                    fontSize: '0.9rem', 
+                    fontSize: '0.8125rem', 
                     margin: '0', 
                     fontWeight: 'bold', 
                     color: '#050505',
                     cursor: 'pointer',
-                    ':hover': {
-                      color: '#1877F2',
-                      textDecoration: 'underline'
-                    }
+                    lineHeight: '1.2',
                   }}
                 >
                   {username || 'Anonymous User'}
                 </h4>
               </a>
             </div>
-            <p className="_comment_status_text" style={{ margin: '0', fontSize: '0.9rem' }}>
+            <p className="_comment_status_text" style={{ 
+              margin: '0', 
+              fontSize: '0.9375rem',
+              lineHeight: '1.3333',
+            }}>
               {content}
             </p>
           </div>
@@ -172,46 +133,62 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
           <div className="_comment_actions" style={{ 
             display: 'flex', 
             alignItems: 'center', 
-            margin: '0 0 0 12px',
-            fontSize: '0.8rem'
+            margin: '2px 0 0 12px',
+            fontSize: '0.75rem'
           }}>
             <ReactionButtons postId={postId} commentId={commentId} currentLikes={reactionCount} />
             <span 
               onClick={handleReply} 
               style={{ 
                 cursor: 'pointer', 
-                marginLeft: '16px',
+                marginLeft: '8px',
                 fontWeight: '600',
                 color: '#65676B'
               }}
             >
               Reply
             </span>
-            <span style={{ marginLeft: '16px', color: '#65676B' }}>
+            <span style={{ marginLeft: '8px', color: '#65676B' }}>
               {timeAgo}
             </span>
           </div>
         </div>
         
-        {/* Display replies with reduced spacing */}
+        {/* Display replies */}
         {localReplies && localReplies.length > 0 && (
-          <div className="_comment_replies" style={replyContainerStyle}>
+          <div className="_comment_replies" style={{
+            marginLeft: '32px',
+            marginTop: '2px',
+          }}>
             {/* Show "View previous replies" button if needed */}
             {!showAllReplies && localReplies.length > 2 && (
               <button 
                 type="button" 
                 onClick={handleViewPreviousReplies}
-                style={replyToggleStyle}
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#65676B',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                }}
               >
-                View {localReplies.length - 2} more {localReplies.length - 2 === 1 ? 'reply' : 'replies'}
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                {localReplies.length - 2} {localReplies.length - 2 === 1 ? 'reply' : 'replies'}
               </button>
             )}
             
-            {/* Toggle between showing all replies or just the latest ones */}
+            {/* Display replies */}
             {displayReplies.map(reply => (
               <div key={reply.id} className="_reply_item" style={{
                 display: 'flex',
-                marginBottom: '4px', // Reduced spacing between replies
+                marginBottom: '2px',
                 width: '100%',
               }}>
                 <div className="_reply_image">
@@ -219,7 +196,7 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
                     <img 
                       src="assets/images/txt_img.png" 
                       alt="" 
-                      style={{ width: '28px', height: '28px', borderRadius: '50%' }} 
+                      style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} 
                     />
                   </a>
                 </div>
@@ -229,25 +206,32 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
                     borderRadius: '18px',
                     padding: '6px 12px',
                     marginBottom: '2px',
+                    display: 'inline-block',
+                    maxWidth: '100%',
                   }}>
-                    <div style={{ marginBottom: '2px' }}>
+                    <div style={{ marginBottom: '1px' }}>
                       <a 
                         href="#" 
                         onClick={(e) => handleNameClick(e, reply.userId)} 
                         style={{ textDecoration: 'none' }}
                       >
                         <h4 style={{ 
-                          fontSize: '0.85rem', 
+                          fontSize: '0.8125rem', 
                           margin: '0', 
                           fontWeight: 'bold', 
                           color: '#050505',
-                          cursor: 'pointer'
+                          cursor: 'pointer',
+                          lineHeight: '1.2',
                         }}>
                           {reply.username || 'Anonymous User'}
                         </h4>
                       </a>
                     </div>
-                    <p style={{ margin: '0', fontSize: '0.85rem' }}>
+                    <p style={{ 
+                      margin: '0', 
+                      fontSize: '0.9375rem',
+                      lineHeight: '1.3333',
+                    }}>
                       {reply.text}
                     </p>
                   </div>
@@ -255,7 +239,7 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
                   <div style={{ 
                     display: 'flex', 
                     alignItems: 'center',
-                    margin: '0 0 0 12px',
+                    margin: '2px 0 0 12px',
                     fontSize: '0.75rem'
                   }}>
                     <span style={{ fontWeight: '600', color: '#65676B', cursor: 'pointer' }}>Like</span>
@@ -270,7 +254,15 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
               <button 
                 type="button" 
                 onClick={() => setShowAllReplies(false)}
-                style={replyToggleStyle}
+                style={{
+                  fontSize: '0.75rem',
+                  color: '#65676B',
+                  cursor: 'pointer',
+                  fontWeight: '600',
+                  background: 'none',
+                  border: 'none',
+                  padding: '4px 0',
+                }}
               >
                 Hide replies
               </button>
@@ -281,8 +273,8 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
         {/* Reply form */}
         {showReplyForm && (
           <div className="_feed_inner_comment_box" style={{ 
-            marginTop: '4px', // Reduced from 8px to 4px
-            marginLeft: '40px' 
+            marginTop: '4px',
+            marginLeft: '32px' 
           }}>
             <form className="_feed_inner_comment_box_form" onSubmit={submitReply} style={{
               display: 'flex',
@@ -292,16 +284,17 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
               padding: '4px 8px',
               width: '100%'
             }}>
-              <div style={{ width: '30px', height: '30px', marginRight: '8px' }}>
+              <div style={{ width: '24px', height: '24px', marginRight: '8px' }}>
                 <img 
                   src="assets/images/comment_img.png" 
                   alt="" 
-                  style={{ width: '100%', height: '100%', borderRadius: '50%' }} 
+                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
                 />
               </div>
               <div style={{ flex: 1 }}>
-                <textarea
-                  className="form-control _comment_textarea"
+                <input
+                  type="text"
+                  className="form-control _comment_input"
                   placeholder="Write a reply..."
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
@@ -309,20 +302,21 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
                     width: '100%',
                     border: 'none',
                     background: 'transparent',
-                    resize: 'none',
                     outline: 'none',
-                    padding: '6px 0', // Reduced padding
-                    fontSize: '0.9rem'
+                    padding: '6px 0',
+                    fontSize: '0.9375rem',
+                    height: '22px',
                   }}
                 />
               </div>
               <button 
                 type="submit" 
+                disabled={!replyText.trim()}
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: '#1877F2',
-                  cursor: 'pointer'
+                  color: replyText.trim() ? '#1877F2' : '#BCC0C4',
+                  cursor: replyText.trim() ? 'pointer' : 'default',
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

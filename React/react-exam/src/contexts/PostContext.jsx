@@ -16,7 +16,7 @@ export const PostProvider = ({ children }) => {
     const minutes = Math.floor(diffInSeconds / 60);
     const hours = Math.floor(diffInSeconds / 3600);
     const days = Math.floor(diffInSeconds / 86400);
-  
+
     if (minutes < 1) {
       return 'Just now';
     } else if (minutes < 60) {
@@ -26,7 +26,7 @@ export const PostProvider = ({ children }) => {
     } else {
       return `${days} day${days > 1 ? 's' : ''} ago`;
     }
-  };  
+  };
 
   const updateTimeAgo = () => {
     const updatedPosts = posts.map(post => ({
@@ -46,39 +46,39 @@ export const PostProvider = ({ children }) => {
     localStorage.setItem('posts', JSON.stringify(updatedPosts));
   };
 
-  const addPost = (text, mediaType, mediaFile, email, name) => {
+  const addPost = (text, mediaType, mediaData, email, name) => {
     const timestamp = Date.now();
-    // console.log(name);
     const newPostId = posts.length > 0 ? Math.max(...posts.map(post => post.id)) + 1 : 1;
-    
+
     const newPost = {
       id: newPostId,
       text,
       mediaType,
-      mediaFile,
+      // Store the URL directly
+      mediaUrl: mediaData?.url || null,
       email,
       name,
       likes: 0,
-      likedBy: [], // Add this to track who liked the post
+      likedBy: [],
       comments: [],
       timestamp,
       timeAgo: timeAgo(timestamp),
     };
-    
+
     const updatedPosts = [newPost, ...posts];
-        
+
     localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
   };
 
-  const editPost = (id, newText, newMediaType, newMediaFile) => {
+  const editPost = (id, newText, newMediaType, newMediaUrl) => {
     const updatedPosts = posts.map(post => {
       if (post.id === id) {
         return {
           ...post,
           text: newText || post.text,
           mediaType: newMediaType !== undefined ? newMediaType : post.mediaType,
-          mediaFile: newMediaFile !== undefined ? newMediaFile : post.mediaFile,
+          mediaUrl: newMediaUrl !== undefined ? newMediaUrl : post.mediaUrl,
         };
       }
       return post;
@@ -100,16 +100,16 @@ export const PostProvider = ({ children }) => {
     if (!userEmail) return false;
 
     let newLikeStatus = false;
-    
+
     const updatedPosts = posts.map(post => {
       if (post.id === id) {
         // Initialize likedBy array if it doesn't exist
         const likedBy = Array.isArray(post.likedBy) ? [...post.likedBy] : [];
-        
+
         // Check if user already liked this post
         const userLikedIndex = likedBy.indexOf(userEmail);
         const userLiked = userLikedIndex !== -1;
-        
+
         if (userLiked) {
           // User already liked, so unlike
           likedBy.splice(userLikedIndex, 1);
@@ -119,11 +119,11 @@ export const PostProvider = ({ children }) => {
           likedBy.push(userEmail);
           newLikeStatus = true;
         }
-        
-        return { 
-          ...post, 
-          likes: likedBy.length, 
-          likedBy: likedBy 
+
+        return {
+          ...post,
+          likes: likedBy.length,
+          likedBy: likedBy
         };
       }
       return post;
@@ -132,14 +132,21 @@ export const PostProvider = ({ children }) => {
     // Update localStorage immediately
     localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
-    
+
     return newLikeStatus;
   };
 
   const addComment = (postId, comment) => {
+    // Ensure comment has likedBy array
+    const commentWithLikes = {
+      ...comment,
+      likes: 0,
+      likedBy: []
+    };
+    
     const updatedPosts = posts.map(post => {
       if (post.id === postId) {
-        const updatedComments = [comment, ...post.comments];
+        const updatedComments = [commentWithLikes, ...post.comments];
         return { ...post, comments: updatedComments };
       }
       return post;
@@ -150,6 +157,13 @@ export const PostProvider = ({ children }) => {
   };
 
   const addReply = (postId, commentId, reply) => {
+    // Ensure reply has likedBy array
+    const replyWithLikes = {
+      ...reply,
+      likes: 0,
+      likedBy: []
+    };
+    
     const updatedPosts = posts.map(post => {
       if (post.id === postId) {
         const updatedComments = post.comments.map(comment => {
@@ -157,7 +171,7 @@ export const PostProvider = ({ children }) => {
             const replies = comment.replies || [];
             return {
               ...comment,
-              replies: [reply, ...replies]
+              replies: [replyWithLikes, ...replies]
             };
           }
           return comment;
@@ -173,20 +187,20 @@ export const PostProvider = ({ children }) => {
 
   const likeComment = (postId, commentId, userEmail) => {
     if (!userEmail) return false;
-    
+
     let newLikeStatus = false;
-    
+
     const updatedPosts = posts.map(post => {
       if (post.id === postId) {
         const updatedComments = post.comments.map(comment => {
           if (comment.id === commentId) {
             // Initialize likedBy array if it doesn't exist
             const likedBy = Array.isArray(comment.likedBy) ? [...comment.likedBy] : [];
-            
+
             // Check if user already liked this comment
             const userLikedIndex = likedBy.indexOf(userEmail);
             const userLiked = userLikedIndex !== -1;
-            
+
             if (userLiked) {
               // User already liked, so unlike
               likedBy.splice(userLikedIndex, 1);
@@ -196,10 +210,10 @@ export const PostProvider = ({ children }) => {
               likedBy.push(userEmail);
               newLikeStatus = true;
             }
-            
-            return { 
-              ...comment, 
-              likes: likedBy.length, 
+
+            return {
+              ...comment,
+              likes: likedBy.length,
               likedBy: likedBy
             };
           }
@@ -213,7 +227,63 @@ export const PostProvider = ({ children }) => {
     // Update localStorage immediately
     localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
-    
+
+    return newLikeStatus;
+  };
+  
+  const likeReply = (postId, commentId, replyId, userEmail) => {
+    if (!userEmail) return false;
+
+    let newLikeStatus = false;
+
+    const updatedPosts = posts.map(post => {
+      if (post.id === postId) {
+        const updatedComments = post.comments.map(comment => {
+          if (comment.id === commentId) {
+            const updatedReplies = (comment.replies || []).map(reply => {
+              if (reply.id === replyId) {
+                // Initialize likedBy array if it doesn't exist
+                const likedBy = Array.isArray(reply.likedBy) ? [...reply.likedBy] : [];
+
+                // Check if user already liked this reply
+                const userLikedIndex = likedBy.indexOf(userEmail);
+                const userLiked = userLikedIndex !== -1;
+
+                if (userLiked) {
+                  // User already liked, so unlike
+                  likedBy.splice(userLikedIndex, 1);
+                  newLikeStatus = false;
+                } else {
+                  // User hasn't liked, so add like
+                  likedBy.push(userEmail);
+                  newLikeStatus = true;
+                }
+
+                return {
+                  ...reply,
+                  likes: likedBy.length,
+                  likedBy: likedBy
+                };
+              }
+              return reply;
+            });
+            
+            return {
+              ...comment,
+              replies: updatedReplies
+            };
+          }
+          return comment;
+        });
+        return { ...post, comments: updatedComments };
+      }
+      return post;
+    });
+
+    // Update localStorage immediately
+    localStorage.setItem('posts', JSON.stringify(updatedPosts));
+    setPosts(updatedPosts);
+
     return newLikeStatus;
   };
 
@@ -243,15 +313,16 @@ export const PostProvider = ({ children }) => {
   }, [posts]);
 
   return (
-    <PostContext.Provider value={{ 
-      posts, 
-      addPost, 
+    <PostContext.Provider value={{
+      posts,
+      addPost,
       editPost,
       deletePost,
-      likePost, 
+      likePost,
       addComment,
       addReply,
-      likeComment
+      likeComment,
+      likeReply
     }}>
       {children}
     </PostContext.Provider>

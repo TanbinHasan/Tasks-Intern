@@ -3,9 +3,15 @@ import React from 'react';
 const PreviousComments = ({ count, onClick }) => {
   return (
     <div className="_previous_comment" style={{
-      marginTop: '4px',
-      marginBottom: '4px'
+      marginBottom: '8px',
+      display: 'flex',
+      alignItems: 'center'
     }}>
+      <div style={{
+        width: '32px',
+        height: '1px',
+        backgroundColor: '#CED0D4'
+      }}></div>
       <button 
         type="button" 
         className="_previous_comment_txt"
@@ -13,17 +19,16 @@ const PreviousComments = ({ count, onClick }) => {
         style={{
           background: 'none',
           border: 'none',
-          fontSize: '0.9rem',
+          fontSize: '0.8125rem',
           color: '#65676B',
           fontWeight: '600',
           cursor: 'pointer',
-          padding: '4px 0',
-          display: 'block',
-          width: '100%',
-          textAlign: 'left'
+          padding: '4px 8px',
+          borderRadius: '6px',
+          marginLeft: '8px'
         }}
       >
-        Previous {count} comments
+        View {count} more {count === 1 ? 'comment' : 'comments'}
       </button>
     </div>
   );

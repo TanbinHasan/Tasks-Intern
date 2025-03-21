@@ -1,4 +1,5 @@
 import React from 'react';
+import PostMedia from '../PostSection/PostMedia';
 
 const Content = ({ post }) => {
   return (
@@ -6,14 +7,9 @@ const Content = ({ post }) => {
       <h4 className="_feed_inner_timeline_post_title">
         {post.text}
       </h4>
-      {post.mediaType === 'image' && post.mediaFile && (
-        <div className="_feed_inner_timeline_image">
-          <img
-            src={post.mediaFile} // Assuming mediaFile contains the image URL
-            alt="Post media"
-            className="_time_img"
-          />
-        </div>
+      {/* Use PostMedia component for consistent media handling */}
+      {post.mediaUrl && (
+        <PostMedia mediaType={post.mediaType} mediaUrl={post.mediaUrl} />
       )}
     </>
   );

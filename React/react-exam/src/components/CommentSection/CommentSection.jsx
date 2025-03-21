@@ -15,21 +15,53 @@ const CommentSection = ({ postId }) => {
   };
 
   // Define which comments to show
-  const visibleComments = showAllComments ? comments : comments.slice(-4);
+  const visibleComments = showAllComments ? comments : comments.slice(-2);
 
   return (
     <div className="_comments_container" style={{
+      borderTop: '1px solid #E4E6EB',
       borderRadius: '0 0 8px 8px',
       backgroundColor: '#ffffff',
-      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
     }}>
+      {/* Comment summary count and most relevant */}
+      {comments.length > 0 && (
+        <div style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          padding: '8px 16px 0',
+          fontSize: '0.9rem',
+          color: '#65676B'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            cursor: 'pointer'
+          }}>
+            <span style={{ fontWeight: '600' }}>Most Relevant</span>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginLeft: '4px' }}>
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </div>
+        </div>
+      )}
+
       <div className="_timline_comment_main" style={{
-        padding: '0',
+        padding: '8px 0',
         width: '100%',
         boxSizing: 'border-box',
       }}>
+        {/* Show "Previous comments" button at the top when there are more than 2 comments */}
+        {!showAllComments && comments.length > 2 && (
+          <div style={{ padding: '0 16px 8px' }}>
+            <PreviousComments 
+              count={comments.length - 2} 
+              onClick={handleViewPreviousComments} 
+            />
+          </div>
+        )}
+        
         {/* Display comments */}
-        <div style={{ marginTop: '4px' }}>
+        <div>
           {visibleComments.map((comment) => (
             <Comment
               key={comment.id}
@@ -44,18 +76,8 @@ const CommentSection = ({ postId }) => {
           ))}
         </div>
         
-        {/* Show "Previous comments" button at the bottom when there are more than 4 comments */}
-        {!showAllComments && comments.length > 4 && (
-          <div style={{ padding: '0 16px 8px' }}>
-            <PreviousComments 
-              count={comments.length - 4} 
-              onClick={handleViewPreviousComments} 
-            />
-          </div>
-        )}
-        
         {/* Show hide comments button if showing all */}
-        {showAllComments && comments.length > 4 && (
+        {showAllComments && comments.length > 2 && (
           <div style={{ padding: '0 16px 8px' }}>
             <button 
               onClick={() => setShowAllComments(false)}
@@ -75,7 +97,7 @@ const CommentSection = ({ postId }) => {
         )}
         
         {/* Comment form */}
-        {/* <CommentForm postId={postId} /> */}
+        <CommentForm postId={postId} />
       </div>
     </div>
   );

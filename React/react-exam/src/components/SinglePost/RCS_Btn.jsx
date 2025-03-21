@@ -51,8 +51,8 @@ const RCS_Btn = ({ post }) => {
       {/* Like count display */}
       {post.likes > 0 && (
         <div className="_feed_inner_timeline_like_count" style={{
-          padding: '8px 12px',
-          fontSize: '14px',
+          padding: '6px 12px',
+          fontSize: '13px',
           color: '#65676b',
           display: 'flex',
           alignItems: 'center',
@@ -98,8 +98,9 @@ const RCS_Btn = ({ post }) => {
             justifyContent: 'center',
             fontWeight: isLiked ? '600' : 'normal',
             color: isLiked ? '#1877f2' : '#65676b',
-            transition: 'background-color 0.2s',
-            flex: '1'
+            transition: 'all 0.2s ease',
+            flex: '1',
+            fontSize: '14px'
           }}
           onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f0f2f5'}
           onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -139,8 +140,9 @@ const RCS_Btn = ({ post }) => {
             justifyContent: 'center',
             color: showComments ? '#1877f2' : '#65676b',
             fontWeight: showComments ? '600' : 'normal',
-            transition: 'background-color 0.2s',
-            flex: '1'
+            transition: 'all 0.2s ease',
+            flex: '1',
+            fontSize: '14px'
           }}
           onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f0f2f5'}
           onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -180,8 +182,9 @@ const RCS_Btn = ({ post }) => {
             justifyContent: 'center',
             color: shared ? '#1877f2' : '#65676b',
             fontWeight: shared ? '600' : 'normal',
-            transition: 'background-color 0.2s',
-            flex: '1'
+            transition: 'all 0.2s ease',
+            flex: '1',
+            fontSize: '14px'
           }}
           onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f0f2f5'}
           onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}

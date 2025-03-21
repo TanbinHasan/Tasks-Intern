@@ -8,27 +8,65 @@ import { useUser } from '../../contexts/UserContext';
 
 const PostSection = ({ userEmail }) => {
   const { user } = useUser();
-  // console.log(user);
   const { addPost } = usePostContext();
   const [postContent, setPostContent] = useState('');
   const [mediaType, setMediaType] = useState('');
-  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaUrl, setMediaUrl] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [previewMedia, setPreviewMedia] = useState(null);
 
   const handlePostClick = () => {
-    if (postContent.trim() !== '') {
-      addPost(postContent, mediaType, mediaFile, user.email, user.name);
+    if (postContent.trim() !== '' || mediaUrl) {
+      addPost(postContent, mediaType, { url: mediaUrl }, user.email, user.name);
       setPostContent('');
       setMediaType('');
-      setMediaFile(null);
+      setMediaUrl('');
+      setPreviewMedia(null);
       setIsModalOpen(false);
     }
   };
 
-  const handleMediaSelection = (type, file) => {
-    console.log('Selected media type:', type, 'File:', file);
+  const handleMediaSelection = (type, media) => {
+    console.log('Selected media type:', type, 'Media:', media);
     setMediaType(type);
-    setMediaFile(file);
+    if (media && media.url) {
+      setMediaUrl(media.url);
+      setPreviewMedia(
+        <div className="media-preview" style={{ marginTop: '16px', maxWidth: '100%' }}>
+          {type === 'photo' ? (
+            <img 
+              src={media.url} 
+              alt="Selected media" 
+              style={{ maxWidth: '100%', maxHeight: '300px', borderRadius: '8px' }} 
+            />
+          ) : (
+            <div style={{ position: 'relative', paddingBottom: '56.25%', height: 0, overflow: 'hidden', borderRadius: '8px' }}>
+              <iframe 
+                src={convertYoutubeUrlToEmbed(media.url)}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', border: 'none' }}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+                title="YouTube video player"
+              />
+            </div>
+          )}
+        </div>
+      );
+    }
+  };
+
+  // Function to convert YouTube URL to embed URL
+  const convertYoutubeUrlToEmbed = (url) => {
+    // Extract video ID from YouTube URL
+    const regExp = /^.*((youtu.be\/)|(v\/)|(\/u\/\w\/)|(embed\/)|(watch\?))\??v?=?([^#&?]*).*/;
+    const match = url.match(regExp);
+    const videoId = (match && match[7].length === 11) ? match[7] : null;
+    
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    
+    return url;
   };
 
   const openPostModal = () => {
@@ -37,6 +75,9 @@ const PostSection = ({ userEmail }) => {
 
   const closePostModal = () => {
     setIsModalOpen(false);
+    setMediaType('');
+    setMediaUrl('');
+    setPreviewMedia(null);
   };
 
   const triggerTextStyle = {
@@ -83,6 +124,9 @@ const PostSection = ({ userEmail }) => {
           </div>
           <TextArea value={postContent} onChange={(e) => setPostContent(e.target.value)} />
         </div>
+
+        {/* Media preview section */}
+        {previewMedia}
 
         <MediaButtons onMediaClick={handleMediaSelection} />
 

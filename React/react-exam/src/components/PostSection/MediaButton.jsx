@@ -1,21 +1,33 @@
-import { useRef } from "react";
+import React from "react";
 
 const MediaButton = ({ type, onClick, isSelected }) => {
-  const fileInputRef = useRef(null);
-
   const handleButtonClick = () => {
-    if (type === 'photo' || type === 'video') {
-      fileInputRef.current.click();
+    if (type === 'photo') {
+      // Random photo URLs
+      const photoUrls = [
+        "https://c4.wallpaperflare.com/wallpaper/990/287/677/pink-floyd-album-covers-wallpaper-preview.jpg",
+        "https://c4.wallpaperflare.com/wallpaper/538/551/690/pink-floyd-wish-you-were-here-wallpaper-preview.jpg",
+        "https://c4.wallpaperflare.com/wallpaper/426/73/129/band-music-pink-floyd-wallpaper-preview.jpg",
+        "https://c4.wallpaperflare.com/wallpaper/856/803/659/wall-pink-floyd-pink-hammer-wallpaper-preview.jpg",
+        "https://c4.wallpaperflare.com/wallpaper/820/767/725/band-music-iron-maiden-wallpaper-preview.jpg",
+        "https://c4.wallpaperflare.com/wallpaper/636/961/185/iron-maiden-metal-artwork-music-wallpaper-preview.jpg",
+        "https://c4.wallpaperflare.com/wallpaper/1012/596/909/music-album-covers-iron-maiden-union-jack-wallpaper-preview.jpg"
+      ];
+      // Pick a random photo URL
+      const randomPhotoUrl = photoUrls[Math.floor(Math.random() * photoUrls.length)];
+      onClick(type, { url: randomPhotoUrl });
+    } else if (type === 'video') {
+      // Random video URLs
+      const videoUrls = [
+        "https://www.youtube.com/watch?v=GIzDsGyxsQM&pp=ygURdGhyb3VnaCB0aGUgZ2xhc3M%3D",
+        "https://www.youtube.com/watch?v=LXEKuttVRIo&pp=ygUOc251ZmYgc2xpcGtub3TSBwkJTwkBhyohjO8%3D"
+      ];
+      // Pick a random video URL
+      const randomVideoUrl = videoUrls[Math.floor(Math.random() * videoUrls.length)];
+      onClick(type, { url: randomVideoUrl });
     }
   };
   
-  const handleFileChange = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      onClick(type, selectedFile);
-    }
-  };
-
   const buttonStyle = {
     color: isSelected ? '#1877f2' : 'inherit'
   };
@@ -61,14 +73,6 @@ const MediaButton = ({ type, onClick, isSelected }) => {
           {getIcon(type)}
         </span>
         {type.charAt(0).toUpperCase() + type.slice(1)}
-        {/* File input to allow file upload */}
-        <input
-          type="file"
-          accept={type === 'photo' ? 'image/*' : 'video/*'}
-          onChange={handleFileChange}
-          style={{ display: 'none' }}
-          ref={fileInputRef} // Reference for file input
-        />
       </button>
     </div>
   );
