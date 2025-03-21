@@ -1,6 +1,14 @@
 import React from 'react'
 
 const RC_Count = ({ post }) => {
+  const commentCount = post.comments.reduce((count, comment) => {
+    let total = 1;
+    if (comment.replies && Array.isArray(comment.replies)) {
+      total += comment.replies.length;
+    }
+    return count + total;
+  }, 0);
+  
   return (
     <>
       <div className="_feed_inner_timeline_total_reacts _padd_r24 _padd_l24 _mar_b26">
@@ -37,11 +45,11 @@ const RC_Count = ({ post }) => {
         <div className="_feed_inner_timeline_total_reacts_txt">
           <p className="_feed_inner_timeline_total_reacts_para1">
             <span>
-              {post.comments.length === 0
+              {commentCount === 0
                 ? ""
-                : post.comments.length === 1
+                : commentCount === 1
                   ? "1 Comment"
-                  : `${post.comments.length} Comments`}
+                  : `${commentCount} Comments`}
             </span>
 
           </p>

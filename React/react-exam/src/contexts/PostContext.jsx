@@ -58,6 +58,7 @@ export const PostProvider = ({ children }) => {
       mediaFile,
       email,
       likes: 0,
+      likedBy: [], // Add this to track who liked the post
       comments: [],
       timestamp,
       timeAgo: timeAgo(timestamp),
@@ -94,13 +95,44 @@ export const PostProvider = ({ children }) => {
     return true;
   };
 
-  const likePost = (id) => {
-    const updatedPosts = posts.map(post => 
-      post.id === id ? { ...post, likes: post.likes + 1 } : post
-    );
+  const likePost = (id, userEmail) => {
+    if (!userEmail) return false;
 
+    let newLikeStatus = false;
+    
+    const updatedPosts = posts.map(post => {
+      if (post.id === id) {
+        // Initialize likedBy array if it doesn't exist
+        const likedBy = Array.isArray(post.likedBy) ? [...post.likedBy] : [];
+        
+        // Check if user already liked this post
+        const userLikedIndex = likedBy.indexOf(userEmail);
+        const userLiked = userLikedIndex !== -1;
+        
+        if (userLiked) {
+          // User already liked, so unlike
+          likedBy.splice(userLikedIndex, 1);
+          newLikeStatus = false;
+        } else {
+          // User hasn't liked, so add like
+          likedBy.push(userEmail);
+          newLikeStatus = true;
+        }
+        
+        return { 
+          ...post, 
+          likes: likedBy.length, 
+          likedBy: likedBy 
+        };
+      }
+      return post;
+    });
+
+    // Update localStorage immediately
     localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
+    
+    return newLikeStatus;
   };
 
   const addComment = (postId, comment) => {
@@ -138,12 +170,37 @@ export const PostProvider = ({ children }) => {
     setPosts(updatedPosts);
   };
 
-  const likeComment = (postId, commentId) => {
+  const likeComment = (postId, commentId, userEmail) => {
+    if (!userEmail) return false;
+    
+    let newLikeStatus = false;
+    
     const updatedPosts = posts.map(post => {
       if (post.id === postId) {
         const updatedComments = post.comments.map(comment => {
           if (comment.id === commentId) {
-            return { ...comment, likes: comment.likes + 1 };
+            // Initialize likedBy array if it doesn't exist
+            const likedBy = Array.isArray(comment.likedBy) ? [...comment.likedBy] : [];
+            
+            // Check if user already liked this comment
+            const userLikedIndex = likedBy.indexOf(userEmail);
+            const userLiked = userLikedIndex !== -1;
+            
+            if (userLiked) {
+              // User already liked, so unlike
+              likedBy.splice(userLikedIndex, 1);
+              newLikeStatus = false;
+            } else {
+              // User hasn't liked, so add like
+              likedBy.push(userEmail);
+              newLikeStatus = true;
+            }
+            
+            return { 
+              ...comment, 
+              likes: likedBy.length, 
+              likedBy: likedBy
+            };
           }
           return comment;
         });
@@ -152,14 +209,24 @@ export const PostProvider = ({ children }) => {
       return post;
     });
 
+    // Update localStorage immediately
     localStorage.setItem('posts', JSON.stringify(updatedPosts));
     setPosts(updatedPosts);
+    
+    return newLikeStatus;
   };
 
+  // Load posts from localStorage on mount
   useEffect(() => {
     const savedPosts = localStorage.getItem('posts');
     if (savedPosts) {
-      setPosts(JSON.parse(savedPosts));
+      try {
+        setPosts(JSON.parse(savedPosts));
+      } catch (e) {
+        console.error("Failed to parse posts data", e);
+        localStorage.removeItem('posts');
+        setPosts([]);
+      }
     }
   }, []);
 
