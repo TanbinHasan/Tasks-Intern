@@ -85,7 +85,7 @@ const RCS_Btn = ({ post }) => {
                   d="M6.938 9.313h7.125M10.5 14.063h3.563"
                 />
               </svg>
-              {post.comments.length === 0 ? 'comment' : `(${post.comments.length} ${post.comments.length > 1 ? 'comments' : 'comment'})`}
+              { ' Comment' }
 
 
             </span>
@@ -113,7 +113,7 @@ const RCS_Btn = ({ post }) => {
                   d="M23 10.5L12.917 1v5.429C3.267 6.429 1 13.258 1 20c2.785-3.52 5.248-5.429 11.917-5.429V20L23 10.5z"
                 />
               </svg>
-              Share {shared && "(Shared)"}
+              { shared ? " Shared" : " Share" }
             </span>
           </span>
         </button>

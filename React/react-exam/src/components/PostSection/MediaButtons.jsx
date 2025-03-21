@@ -13,8 +13,14 @@ const MediaButtons = ({ onMediaClick }) => {
     onMediaClick(type, file);
   };
 
+  const containerStyle = {
+    display: 'flex',
+    gap: '12px',
+    marginTop: '16px'
+  };
+
   return (
-    <div className="_feed_inner_text_area_bottom">
+    <div className="_feed_inner_text_area_bottom" style={containerStyle}>
       {types.map((type) => (
         <MediaButton
           key={type}

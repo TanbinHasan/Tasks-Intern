@@ -3,6 +3,10 @@ import PostHeader from './PostHeader';
 import Content from './Content';
 import { usePostContext } from '../../contexts/PostContext';
 import { useUser } from '../../contexts/UserContext';
+import MediaButtons from '../PostSection/MediaButtons';
+import Edit_Modal from './Edit_Modal';
+import Delete_Modal from './Delete_Modal';
+import EditPostButton from './EditPostButton';
 
 const PostContent = ({ post }) => {
   const { editPost, deletePost } = usePostContext();
@@ -11,6 +15,10 @@ const PostContent = ({ post }) => {
   const [dropdownVisible, setDropdownVisible] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [editText, setEditText] = useState(post.text);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [mediaType, setMediaType] = useState('');
+  const [mediaFile, setMediaFile] = useState(null);
 
   const dropdownRef = useRef(null);
   const dropdownButtonRef = useRef(null);
@@ -22,25 +30,39 @@ const PostContent = ({ post }) => {
   };
 
   const handleEditClick = () => {
-    setEditMode(true);
+    setEditText(post.text);
+    setMediaType(post.mediaType || '');
+    setMediaFile(post.mediaFile || null);
+    setIsEditModalOpen(true);
     setDropdownVisible(false);
   };
 
   const handleDeleteClick = () => {
-    if (window.confirm('Are you sure you want to delete this post?')) {
-      deletePost(post.id);
-    }
+    setIsDeleteModalOpen(true);
     setDropdownVisible(false);
   };
 
-  const handleSaveClick = () => {
-    editPost(post.id, editText);
-    setEditMode(false);
+  const handleConfirmDelete = () => {
+    deletePost(post.id);
+    setIsDeleteModalOpen(false);
   };
 
-  const handleCancelClick = () => {
-    setEditText(post.text);
-    setEditMode(false);
+  const handleSaveClick = () => {
+    editPost(post.id, editText, mediaType, mediaFile);
+    setIsEditModalOpen(false);
+  };
+
+  const handleMediaSelection = (type, file) => {
+    setMediaType(type);
+    setMediaFile(file);
+  };
+
+  const closeEditModal = () => {
+    setIsEditModalOpen(false);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
   };
   
   useEffect(() => {
@@ -60,6 +82,18 @@ const PostContent = ({ post }) => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+
+  const modalPostBoxStyle = {
+    marginBottom: '16px'
+  };
+
+  const postButtonContainerStyle = {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '16px',
+    paddingTop: '16px',
+    borderTop: '1px solid #eee'
+  };
 
   return (
     <>
@@ -229,53 +263,62 @@ const PostContent = ({ post }) => {
         </div>
       </div>
 
-      {/* Conditional rendering for edit mode */}
-      {editMode ? (
-        <div style={{ padding: '15px', marginBottom: '15px', background: '#f9f9f9', borderRadius: '8px' }}>
-          <textarea
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            style={{
-              width: '100%',
-              minHeight: '100px',
-              padding: '12px',
-              borderRadius: '6px',
-              border: '1px solid #e0e0e0',
-              marginBottom: '15px',
-              fontFamily: 'inherit',
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-            <button
-              onClick={handleCancelClick}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '4px',
-                border: 'none',
-                background: '#f0f0f0',
-                cursor: 'pointer',
-              }}
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveClick}
-              style={{
-                padding: '8px 16px',
-                borderRadius: '4px',
-                border: 'none',
-                background: '#1890FF',
-                color: 'white',
-                cursor: 'pointer',
-              }}
-            >
-              Save
-            </button>
+      {/* Post content */}
+      <Content post={post} />
+
+      {/* Edit Post Modal */}
+      <Edit_Modal isOpen={isEditModalOpen} onClose={closeEditModal}>
+        <div className="_feed_inner_text_area_box" style={modalPostBoxStyle}>
+          <div className="_feed_inner_text_area_box_image">
+            <img src="assets/images/txt_img.png" alt="Image" className="_txt_img" />
+          </div>
+          <div className="_feed_inner_text_area_box_form">
+            <div className="form-control">
+              <textarea
+                value={editText}
+                onChange={(e) => setEditText(e.target.value)}
+                className="_textarea"
+                placeholder="What's on your mind?"
+                style={{
+                  width: '100%',
+                  minHeight: '100px',
+                  padding: '12px',
+                  borderRadius: '6px',
+                  border: '1px solid #e0e0e0',
+                  resize: 'none',
+                  fontFamily: 'inherit',
+                }}
+              />
+            </div>
           </div>
         </div>
-      ) : (
-        <Content post={post} />
-      )}
+
+        <MediaButtons onMediaClick={handleMediaSelection} />
+
+        <div style={postButtonContainerStyle}>
+          <button
+            onClick={closeEditModal}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '4px',
+              border: 'none',
+              background: '#f0f0f0',
+              cursor: 'pointer',
+              marginRight: '10px'
+            }}
+          >
+            Cancel
+          </button>
+          <EditPostButton onClick={handleSaveClick} />
+        </div>
+      </Edit_Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Delete_Modal 
+        isOpen={isDeleteModalOpen} 
+        onClose={closeDeleteModal} 
+        onConfirm={handleConfirmDelete} 
+      />
     </>
   );
 };
