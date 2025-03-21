@@ -30,8 +30,6 @@ const NavBarSection = () => {
     navigate('/');
   };
 
-  const userName = user?.email ? user.email.split('@')[0] : 'User';
-
   return (
     <>
       <div className="_header_nav_profile" ref={dropdownRef}>
@@ -43,7 +41,7 @@ const NavBarSection = () => {
           />
         </div>
         <div className="_header_nav_dropdown">
-          <p className="_header_nav_para">{userName}</p>
+          <p className="_header_nav_para">{user.name}</p>
           <button
             id="_profile_drop_show_btn"
             className="_header_nav_dropdown_btn _dropdown_toggle"
@@ -78,7 +76,7 @@ const NavBarSection = () => {
               />
             </div>
             <div className="_nav_profile_dropdown_info_txt">
-              <h4 className="_nav_dropdown_title">{userName}</h4>
+              <h4 className="_nav_dropdown_title">{user.name}</h4>
               <a href="/profile" className="_nav_drop_profile">
                 View Profile
               </a>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUser } from '../contexts/UserContext';
 
 export default function LogIn() {
-  const { login, setActiveUser } = useUser();
+  const { login } = useUser();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -25,9 +25,8 @@ export default function LogIn() {
 
     const storedUser = JSON.parse(localStorage.getItem(email));
     if (storedUser && storedUser.password === password) {
-      setActiveUser({ email, password });
-
-      localStorage.setItem('activeUser', JSON.stringify({ email, password }));
+      // Use the full stored user object which includes name
+      localStorage.setItem('activeUser', JSON.stringify(storedUser));
       localStorage.setItem('active', true);
 
       if (rememberMe) {
@@ -36,8 +35,11 @@ export default function LogIn() {
         localStorage.removeItem('rememberedUser');
       }
 
-      login({ email, password });
-      navigate('/feed');
+      // Pass the full user object to login
+      const success = login(email, password);
+      if (success) {
+        navigate('/feed');
+      }
     } else {
       setError('Invalid credentials');
     }

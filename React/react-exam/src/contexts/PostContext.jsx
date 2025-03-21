@@ -46,9 +46,9 @@ export const PostProvider = ({ children }) => {
     localStorage.setItem('posts', JSON.stringify(updatedPosts));
   };
 
-  const addPost = (text, mediaType, mediaFile, email) => {
+  const addPost = (text, mediaType, mediaFile, email, name) => {
     const timestamp = Date.now();
-    
+    // console.log(name);
     const newPostId = posts.length > 0 ? Math.max(...posts.map(post => post.id)) + 1 : 1;
     
     const newPost = {
@@ -57,6 +57,7 @@ export const PostProvider = ({ children }) => {
       mediaType,
       mediaFile,
       email,
+      name,
       likes: 0,
       likedBy: [], // Add this to track who liked the post
       comments: [],

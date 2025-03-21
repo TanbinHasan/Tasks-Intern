@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 const bannedUsernames = ["meta", "google", "facebook", "twitter"];
 
 function Register() {
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -18,6 +19,7 @@ function Register() {
   const [isPasswordMatched, setIsPasswordMatched] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [touched, setTouched] = useState({
+    name: false,
     email: false,
     password: false,
     confirmPassword: false,
@@ -45,6 +47,7 @@ function Register() {
 
   useEffect(() => {
     setIsFormValid(
+      name &&
       email && 
       password && 
       confirmPassword && 
@@ -55,9 +58,13 @@ function Register() {
       passwordCriteria.number && 
       termsAccepted
     );
-  }, [email, password, confirmPassword, isPasswordMatched, passwordCriteria, termsAccepted]);
+  }, [name, email, password, confirmPassword, isPasswordMatched, passwordCriteria, termsAccepted]);
 
   const validateForm = () => {
+    if (!name) {
+      return "Name is required.";
+    }
+    
     if (!email) {
       return "Email is required.";
     }
@@ -94,6 +101,7 @@ function Register() {
     e.preventDefault();
   
     setTouched({
+      name: true,
       email: true,
       password: true,
       confirmPassword: true,
@@ -113,15 +121,35 @@ function Register() {
       return;
     }
   
-    const userData = { email, password };
+    // Create user data object with name included
+    const userData = { name, email, password };
+    
+    // Store in localStorage - both under email key and as activeUser
     localStorage.setItem(email, JSON.stringify(userData));
-    localStorage.setItem('activeUser', JSON.stringify({ email, password }));
+    localStorage.setItem('activeUser', JSON.stringify(userData));
+    
+    // For debugging - check what was stored
+    console.log("Stored user data:", userData);
+    console.log("From localStorage:", JSON.parse(localStorage.getItem(email)));
+    console.log("Active user:", JSON.parse(localStorage.getItem('activeUser')));
+    
     alert("Registration successful!");
-  
     setError("");
     navigate("/");
   };
   
+  const handleNameChange = (e) => {
+    const value = e.target.value;
+    setName(value);
+    setTouched({ ...touched, name: true });
+    
+    if (!value) {
+      setError("Name is required.");
+    } else {
+      setError("");
+    }
+  };
+
   const handleEmailChange = (e) => {
     const value = e.target.value;
     setEmail(value);
@@ -154,6 +182,13 @@ function Register() {
       setError("You must accept the terms and conditions to register.");
     } else {
       setError("");
+    }
+  };
+
+  const handleNameBlur = () => {
+    setTouched({ ...touched, name: true });
+    if (!name) {
+      setError("Name is required.");
     }
   };
 
@@ -251,6 +286,32 @@ function Register() {
                   
                   <form className="_social_registration_form" onSubmit={handleSubmit}>
                     <div className="row">
+                      {/* Name field */}
+                      <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
+                        <div className="_social_registration_form_input _mar_b14">
+                          <label
+                            className="_social_registration_label _mar_b8"
+                            htmlFor="name"
+                          >
+                            Name
+                          </label>
+                          <input
+                            id="name"
+                            type="text"
+                            value={name}
+                            onChange={handleNameChange}
+                            onBlur={handleNameBlur}
+                            className={`form-control _social_registration_input ${touched.name && !name ? "is-invalid" : ""}`}
+                            required
+                          />
+                          {touched.name && !name && (
+                            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545" }}>
+                              Name is required
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
                       <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                         <div className="_social_registration_form_input _mar_b14">
                           <label

@@ -32,14 +32,26 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
     setShowAllReplies(prevState => !prevState);
   };
 
+  const handleNameClick = (e, userId) => {
+    e.preventDefault();
+    // You can implement a proper profile navigation here in the future
+    console.log(`Navigating to profile of user: ${userId || 'anonymous'}`);
+    // For now, just show an alert to demonstrate the click is working
+    alert(`This would navigate to ${username}'s profile`);
+  };
+
   const submitReply = (e) => {
     e.preventDefault();
     if (replyText.trim()) {
       const timestamp = Date.now();
+      // Use displayName if available, or fallback to a nicer name instead of email
+      const displayName = user?.displayName || user?.name || 'Anonymous User';
+      
       const newReply = {
         id: timestamp,
         text: replyText,
-        username: user ? user.email : 'Anonymous',
+        username: displayName,
+        userId: user?.id || 'anonymous', // Store user ID for profile linking
         timestamp,
         timeAgo: 'Just now',
         likes: 0
@@ -100,10 +112,23 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
     marginTop: '2px', // Reduced from 4px to 2px
   };
 
+  // Style for clickable username
+  const usernameLinkStyle = {
+    textDecoration: 'none',
+    fontWeight: 'bold',
+    color: '#050505',
+    cursor: 'pointer',
+    transition: 'color 0.2s ease',
+    ':hover': {
+      color: '#1877F2',
+      textDecoration: 'underline'
+    }
+  };
+
   return (
     <div className="_comment_main" style={commentStyle}>
       <div className="_comment_image">
-        <a href="profile.html" className="_comment_image_link">
+        <a href="#" className="_comment_image_link" onClick={(e) => handleNameClick(e)}>
           <img 
             src="assets/images/txt_img.png" 
             alt="" 
@@ -116,14 +141,26 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
         <div className="_comment_details">
           <div className="_comment_status" style={commentContentStyle}>
             <div className="_comment_name" style={{ marginBottom: '2px' }}>
-              <a href="profile.html" style={{ textDecoration: 'none' }}>
-                <h4 className="_comment_name_title" style={{ 
-                  fontSize: '0.9rem', 
-                  margin: '0', 
-                  fontWeight: 'bold', 
-                  color: '#050505' 
-                }}>
-                  {username || 'Anonymous'}
+              <a 
+                href="#" 
+                onClick={(e) => handleNameClick(e)} 
+                style={{ textDecoration: 'none' }}
+              >
+                <h4 
+                  className="_comment_name_title" 
+                  style={{ 
+                    fontSize: '0.9rem', 
+                    margin: '0', 
+                    fontWeight: 'bold', 
+                    color: '#050505',
+                    cursor: 'pointer',
+                    ':hover': {
+                      color: '#1877F2',
+                      textDecoration: 'underline'
+                    }
+                  }}
+                >
+                  {username || 'Anonymous User'}
                 </h4>
               </a>
             </div>
@@ -178,7 +215,7 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
                 width: '100%',
               }}>
                 <div className="_reply_image">
-                  <a href="profile.html">
+                  <a href="#" onClick={(e) => handleNameClick(e, reply.userId)}>
                     <img 
                       src="assets/images/txt_img.png" 
                       alt="" 
@@ -194,14 +231,19 @@ const Comment = ({ postId, commentId, username, content, reactionCount, timeAgo,
                     marginBottom: '2px',
                   }}>
                     <div style={{ marginBottom: '2px' }}>
-                      <a href="profile.html" style={{ textDecoration: 'none' }}>
+                      <a 
+                        href="#" 
+                        onClick={(e) => handleNameClick(e, reply.userId)} 
+                        style={{ textDecoration: 'none' }}
+                      >
                         <h4 style={{ 
                           fontSize: '0.85rem', 
                           margin: '0', 
                           fontWeight: 'bold', 
-                          color: '#050505' 
+                          color: '#050505',
+                          cursor: 'pointer'
                         }}>
-                          {reply.username || 'Anonymous'}
+                          {reply.username || 'Anonymous User'}
                         </h4>
                       </a>
                     </div>

@@ -16,7 +16,11 @@ export const UserProvider = ({ children, onInitialized }) => {
       if (activeUser) {
         try {
           const userData = JSON.parse(activeUser);
+          // Ensure we have all fields including name
           setUser(userData);
+          
+          // For debugging
+          // console.log("UserContext initialized with user data:", userData);
           
           // Load user's reactions if user is logged in
           if (userData && userData.email) {
@@ -60,23 +64,36 @@ export const UserProvider = ({ children, onInitialized }) => {
   }, [onInitialized]);
 
   const login = (email, password) => {
-    const storedUser = JSON.parse(localStorage.getItem(email));
-    if (storedUser && storedUser.password === password) {
-      const userData = { email, password };
-      setUser(userData);
-      localStorage.setItem('activeUser', JSON.stringify(userData));
-      
-      // Load user's reactions
-      const savedReactions = localStorage.getItem(`userReactions_${email}`);
-      if (savedReactions) {
-        setUserReactions(JSON.parse(savedReactions));
-      } else {
-        setUserReactions({});
+    try {
+      const storedUserJSON = localStorage.getItem(email);
+      if (!storedUserJSON) {
+        console.error("No user found with this email");
+        return false;
       }
       
-      return true;
+      const storedUser = JSON.parse(storedUserJSON);
+      console.log("Retrieved user data during login:", storedUser);
+      
+      if (storedUser && storedUser.password === password) {
+        // Set the complete user object with all properties
+        setUser(storedUser);
+        localStorage.setItem('activeUser', JSON.stringify(storedUser));
+        
+        // Load user's reactions
+        const savedReactions = localStorage.getItem(`userReactions_${email}`);
+        if (savedReactions) {
+          setUserReactions(JSON.parse(savedReactions));
+        } else {
+          setUserReactions({});
+        }
+        
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error during login:", error);
+      return false;
     }
-    return false;
   };
 
   const setActiveUser = (updatedUser) => {

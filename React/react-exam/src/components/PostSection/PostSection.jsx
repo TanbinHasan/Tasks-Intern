@@ -8,6 +8,7 @@ import { useUser } from '../../contexts/UserContext';
 
 const PostSection = ({ userEmail }) => {
   const { user } = useUser();
+  // console.log(user);
   const { addPost } = usePostContext();
   const [postContent, setPostContent] = useState('');
   const [mediaType, setMediaType] = useState('');
@@ -16,7 +17,7 @@ const PostSection = ({ userEmail }) => {
 
   const handlePostClick = () => {
     if (postContent.trim() !== '') {
-      addPost(postContent, mediaType, mediaFile, user.email);
+      addPost(postContent, mediaType, mediaFile, user.email, user.name);
       setPostContent('');
       setMediaType('');
       setMediaFile(null);

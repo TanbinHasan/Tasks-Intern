@@ -13,7 +13,7 @@ const PostHeader = ({post}) => {
         </div>
         <div className="_feed_inner_timeline_post_box_txt">
           <h4 className="_feed_inner_timeline_post_box_title">
-            {post.email}
+            {post.name}
           </h4>
           <p className="_feed_inner_timeline_post_box_para">
             {post.timeAgo} .<a href="#0">Public</a>

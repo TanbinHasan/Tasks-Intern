@@ -11,10 +11,14 @@ const CommentForm = ({ postId }) => {
     e.preventDefault();
     if (commentText.trim()) {
       const timestamp = Date.now();
+      // Use displayName if available, or use a fallback name instead of email
+      const displayName = user?.displayName || user?.name || 'Anonymous User';
+      
       const newComment = {
         id: timestamp,
         text: commentText,
-        username: user ? user.email : 'Anonymous',
+        username: displayName,
+        userId: user?.id || 'anonymous', // Store user ID for profile linking
         timestamp,
         timeAgo: 'Just now',
         likes: 0,
@@ -28,7 +32,6 @@ const CommentForm = ({ postId }) => {
 
   return (
     <div className="_feed_inner_comment_box" style={{
-      // Removed padding and margin
       borderTop: '1px solid #E4E6EB'
     }}>
       <form 
@@ -39,14 +42,14 @@ const CommentForm = ({ postId }) => {
           alignItems: 'center',
           backgroundColor: '#F0F2F5',
           borderRadius: '20px',
-          padding: '4px 8px', // Reduced horizontal padding
+          padding: '4px 8px',
           width: '100%'
         }}
       >
         <div style={{ 
-          width: '32px', // Reduced from 36px
-          height: '32px', // Reduced from 36px
-          marginRight: '6px', // Reduced from 8px
+          width: '32px',
+          height: '32px',
+          marginRight: '6px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center' 
@@ -69,8 +72,8 @@ const CommentForm = ({ postId }) => {
               background: 'transparent',
               resize: 'none',
               outline: 'none',
-              minHeight: '32px', // Reduced from 36px
-              padding: '6px 0', // Reduced vertical padding
+              minHeight: '32px',
+              padding: '6px 0',
               fontSize: '0.95rem'
             }}
           />
@@ -78,7 +81,7 @@ const CommentForm = ({ postId }) => {
         <div style={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: '4px' // Reduced from 8px
+          gap: '4px'
         }}>
           <button 
             type="button" 
@@ -88,8 +91,8 @@ const CommentForm = ({ postId }) => {
               border: 'none',
               color: '#606770',
               cursor: 'pointer',
-              width: '28px', // Reduced from 32px
-              height: '28px', // Reduced from 32px
+              width: '28px',
+              height: '28px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -108,8 +111,8 @@ const CommentForm = ({ postId }) => {
               border: 'none',
               color: '#606770',
               cursor: 'pointer',
-              width: '28px', // Reduced from 32px
-              height: '28px', // Reduced from 32px
+              width: '28px',
+              height: '28px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -130,8 +133,8 @@ const CommentForm = ({ postId }) => {
               border: 'none',
               color: commentText.trim() ? '#1877F2' : '#BCC0C4',
               cursor: commentText.trim() ? 'pointer' : 'default',
-              width: '28px', // Reduced from 32px
-              height: '28px', // Reduced from 32px
+              width: '28px',
+              height: '28px',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
