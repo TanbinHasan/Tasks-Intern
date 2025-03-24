@@ -1,0 +1,273 @@
+/* Enhanced Dark Mode Styles */
+
+/* Custom Properties for Dark Mode */
+:root {
+  --light-background: #f0f2f5;
+  --light-card-bg: #ffffff;
+  --light-text: #050505;
+  --light-secondary-text: #65676B;
+  --light-border: #e4e6eb;
+  --primary-blue: #1877f2;
+}
+
+/* Dark Mode Variables */
+.dark-mode {
+  --background-color: #18191a;
+  --card-background: #242526;
+  --text-color: #e4e6eb;
+  --border-color: #3a3b3c;
+  --secondary-text: #b0b3b8;
+  --hover-color: #3a3b3c;
+  --active-color: #1877f2;
+  --input-background: #3a3b3c;
+  --input-text: #e4e6eb;
+  --button-background: #3a3b3c;
+  --button-hover: #4a4b4c;
+}
+
+/* Apply dark mode styles with higher specificity */
+.dark-mode body,
+.dark-mode ._layout_main_wrapper,
+.dark-mode ._main_layout {
+  background-color: var(--background-color) !important;
+  color: var(--text-color) !important;
+}
+
+/* Cards and containers */
+.dark-mode ._feed_inner_area,
+.dark-mode ._feed_inner_timeline_post,
+.dark-mode ._feed_inner_text_area,
+.dark-mode ._left_inner_area_explore,
+.dark-mode ._left_inner_area_suggest,
+.dark-mode ._left_inner_area_event,
+.dark-mode ._right_inner_area_info,
+.dark-mode ._feed_right_inner_area_card {
+  background-color: var(--card-background) !important;
+  border-color: var(--border-color) !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Text elements */
+.dark-mode h1, 
+.dark-mode h2, 
+.dark-mode h3, 
+.dark-mode h4, 
+.dark-mode h5, 
+.dark-mode h6,
+.dark-mode p,
+.dark-mode span,
+.dark-mode a,
+.dark-mode label,
+.dark-mode ._left_inner_area_explore_link,
+.dark-mode ._feed_inner_timeline_post_box_title,
+.dark-mode ._feed_inner_timeline_post_title,
+.dark-mode ._left_inner_area_suggest_info_title,
+.dark-mode ._left_inner_area_suggest_content_title,
+.dark-mode ._left_inner_area_explore_title,
+.dark-mode ._left_inner_event_title,
+.dark-mode ._left_inner_event_card_title,
+.dark-mode ._right_inner_area_info_content_title,
+.dark-mode ._right_inner_area_info_box_title,
+.dark-mode ._feed_right_inner_area_card_content_title,
+.dark-mode ._feed_right_inner_area_card_ppl_title,
+.dark-mode ._feed_inner_notification_para {
+  color: var(--text-color) !important;
+}
+
+/* Secondary text */
+.dark-mode ._feed_inner_timeline_post_box_para,
+.dark-mode ._left_inner_area_suggest_info_para,
+.dark-mode ._left_inner_event_card_date_para,
+.dark-mode ._left_inner_event_card_date_para1,
+.dark-mode ._left_iner_event_bottom,
+.dark-mode ._right_inner_area_info_box_para,
+.dark-mode ._feed_right_inner_area_card_ppl_para,
+.dark-mode ._feed_right_inner_area_card_ppl_side span,
+.dark-mode ._nitification_time span,
+.dark-mode ._notification_para {
+  color: var(--secondary-text) !important;
+}
+
+/* SVG and icon colors */
+.dark-mode svg path,
+.dark-mode svg circle,
+.dark-mode svg rect,
+.dark-mode ._left_inner_area_explore_link svg path,
+.dark-mode ._left_inner_area_explore_link svg circle,
+.dark-mode ._mobile_svg path,
+.dark-mode ._mobile_svg circle,
+.dark-mode ._dark_svg path,
+.dark-mode ._dark_svg circle,
+.dark-mode ._header_form_svg path,
+.dark-mode ._header_form_svg circle {
+  fill: var(--text-color) !important;
+  stroke: var(--text-color) !important;
+}
+
+/* Special case for icons that need specific colors */
+.dark-mode ._layout_change_btn_ic1 svg path,
+.dark-mode ._layout_change_btn_ic2 svg path,
+.dark-mode ._layout_change_btn_ic2 svg circle {
+  fill: #fff !important;
+  stroke: #fff !important;
+}
+
+/* Inputs and forms */
+.dark-mode input,
+.dark-mode textarea,
+.dark-mode select,
+.dark-mode ._inpt1,
+.dark-mode ._textarea,
+.dark-mode ._feed_right_inner_area_card_form_inpt,
+.dark-mode ._header_form_grp,
+.dark-mode ._feed_right_inner_area_card_form {
+  background-color: var(--input-background) !important;
+  color: var(--input-text) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Buttons */
+.dark-mode button:not(._layout_swithing_btn_link):not(.navbar-toggler),
+.dark-mode ._info_link,
+.dark-mode ._left_iner_event_bottom_link,
+.dark-mode ._notifications_btn_link,
+.dark-mode ._notifications_btn_link1 {
+  background-color: var(--button-background) !important;
+  color: var(--text-color) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark-mode button:hover:not(._layout_swithing_btn_link):not(.navbar-toggler) {
+  background-color: var(--button-hover) !important;
+}
+
+/* Toggle button specific styles */
+.dark-mode ._layout_swithing_btn {
+  background-color: var(--active-color) !important;
+}
+
+.dark-mode ._layout_swithing_btn_round {
+  transform: translateX(20px) !important;
+  background-color: white !important;
+}
+
+/* Post area styling */
+.dark-mode ._feed_inner_text_area_bottom {
+  background-color: var(--card-background) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark-mode ._feed_inner_text_area_bottom_photo_link,
+.dark-mode ._feed_inner_text_area_bottom_video_link {
+  color: var(--text-color) !important;
+}
+
+/* Modal styling */
+.dark-mode .facebook-modal-overlay {
+  background-color: rgba(0, 0, 0, 0.8) !important;
+}
+
+.dark-mode .facebook-modal-content,
+.dark-mode .modal-body {
+  background-color: var(--card-background) !important;
+  color: var(--text-color) !important;
+}
+
+/* Dividers and separators */
+.dark-mode ._underline,
+.dark-mode hr {
+  border-color: var(--border-color) !important;
+}
+
+/* Navigation and menu items */
+.dark-mode ._header_nav_link,
+.dark-mode .navbar-light .navbar-nav .nav-link {
+  color: var(--text-color) !important;
+}
+
+.dark-mode ._header_nav_link_active,
+.dark-mode .navbar-light .navbar-nav .nav-link.active {
+  color: var(--active-color) !important;
+}
+
+/* Post placeholder */
+.dark-mode ._feed_inner_text_area_box_form ._textarea,
+.dark-mode ._feed_textarea_label {
+  color: var(--secondary-text) !important;
+}
+
+/* Dropdown menus */
+.dark-mode ._feed_timeline_dropdown,
+.dark-mode ._feed_timeline_dropdown_list,
+.dark-mode ._notification_dropdown,
+.dark-mode ._notifications_drop_right,
+.dark-mode ._notification_list {
+  background-color: var(--card-background) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark-mode ._feed_timeline_dropdown_link,
+.dark-mode ._notification_link {
+  color: var(--text-color) !important;
+}
+
+/* Avatar and profile pics */
+.dark-mode ._box_ppl_img,
+.dark-mode ._ppl_img,
+.dark-mode ._info_img,
+.dark-mode ._info_img1 {
+  border: 2px solid var(--border-color) !important;
+}
+
+/* Online indicators */
+.dark-mode ._feed_right_inner_area_card_ppl_side svg rect {
+  fill: #0ACF83 !important; /* Keep the online indicator green */
+}
+
+/* Animation for the toggle button */
+._layout_swithing_btn_round {
+  transition: transform 0.3s ease;
+}
+
+._layout_swithing_btn {
+  transition: background-color 0.3s ease;
+}
+
+/* Default (light mode) setting */
+._layout_change_btn_ic2 {
+  display: none !important;
+}
+
+._layout_change_btn_ic1 {
+  display: flex !important;
+}
+
+/* Handle active state for toggle button */
+._layout_swithing_btn_link.active ._layout_swithing_btn {
+  background-color: var(--active-color);
+}
+
+._layout_swithing_btn_link.active ._layout_swithing_btn_round {
+  transform: translateX(20px);
+}
+
+._layout_swithing_btn_link.active ._layout_change_btn_ic2 {
+  display: flex !important;
+}
+
+._layout_swithing_btn_link.active ._layout_change_btn_ic1 {
+  display: none !important;
+}
+
+/* Fix for specific components that might not be changing correctly */
+.dark-mode ._home_active {
+  stroke: var(--text-color) !important;
+}
+
+.dark-mode .navbar-light .navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(255, 255, 255, 0.5)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e") !important;
+}
+
+.dark-mode .navbar-toggler {
+  background-color: var(--button-background) !important;
+}
