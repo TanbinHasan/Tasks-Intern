@@ -7,16 +7,14 @@ interface PostProps {
 }
 
 const Post: React.FC<PostProps> = ({ post }) => {
-  
-  // Post component logic and state here
-  
+    
   return (
     <div className="post-container">
       <div className="post-header">
         <div className="user-info">
-          <img src="assets/images/user-avatar.png" alt={post.name} className="avatar" />
+          <img src="assets/images/user-avatar.png" alt={post.user?.name} className="avatar" />
           <div>
-            <h4>{post.name}</h4>
+            <h4>{post.user?.name}</h4>
             <span className="timestamp">{post.timeAgo}</span>
           </div>
         </div>
@@ -28,9 +26,11 @@ const Post: React.FC<PostProps> = ({ post }) => {
       <div className="post-content">
         <p>{post.text}</p>
         
-        {/* Check if media exists and pass correct props to PostMedia */}
-        {post.mediaUrl && (
-          <PostMedia mediaType={post.mediaType || ''} mediaUrl={post.mediaUrl} />
+        {/* Handle multiple media items */}
+        {post.mediaItems && post.mediaItems.length > 0 && (
+          post.mediaItems.map((item, index) => (
+            <PostMedia key={index} mediaType={item.type} mediaUrl={item.url} />
+          ))
         )}
       </div>
       

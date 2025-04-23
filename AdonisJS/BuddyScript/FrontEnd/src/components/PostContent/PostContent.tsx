@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef, CSSProperties } from 'react';
 import PostHeader from './PostHeader';
 import Content from './Content';
 import { useDispatch, useSelector } from 'react-redux';
-import { editPost, deletePost, Post, MediaItem } from '../../store/slices/postSlice';
+import { updatePost, deletePost, Post, MediaItem } from '../../store/slices/postSlice';
 import { selectUser } from '../../store/slices/userSlice';
 import MediaButtons from '../PostSection/MediaButtons';
 import Edit_Modal from './Edit_Modal';
 import Delete_Modal from './Delete_Modal';
 import EditPostButton from './EditPostButton';
-import { RootState, AppDispatch } from '../../store';
+import { AppDispatch } from '../../store';
 
 interface PostContentProps {
   post: Post;
@@ -22,19 +22,17 @@ const PostContent: React.FC<PostContentProps> = ({ post }) => {
   const [editText, setEditText] = useState<string>(post.text);
   const [isEditModalOpen, setIsEditModalOpen] = useState<boolean>(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
-  // Change from single media to array of media items
   const [mediaItems, setMediaItems] = useState<MediaItem[]>(post.mediaItems || []);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
 
-  const isAuthor = user && user.email === post.email;
+  // Check if user is author based on user_id instead of email
+  const isAuthor = user && user.id === post.user_id;
 
   useEffect(() => {
-    // Initialize media items based on post data (for backward compatibility)
-    if (!post.mediaItems && post.mediaType && post.mediaUrl) {
-      setMediaItems([{ type: post.mediaType, url: post.mediaUrl }]);
-    }
+    // Update mediaItems when post changes
+    setMediaItems(post.mediaItems || []);
   }, [post]);
 
   const handleToggleDropdown = () => {
@@ -44,17 +42,7 @@ const PostContent: React.FC<PostContentProps> = ({ post }) => {
   const handleEditClick = () => {
     // Reset form state with current post data
     setEditText(post.text);
-    
-    // Set up media items from post
-    if (post.mediaItems) {
-      setMediaItems(post.mediaItems);
-    } else if (post.mediaType && post.mediaUrl) {
-      // For backward compatibility
-      setMediaItems([{ type: post.mediaType, url: post.mediaUrl }]);
-    } else {
-      setMediaItems([]);
-    }
-    
+    setMediaItems(post.mediaItems || []);
     setIsEditModalOpen(true);
     setDropdownVisible(false);
   };
@@ -70,10 +58,10 @@ const PostContent: React.FC<PostContentProps> = ({ post }) => {
   };
 
   const handleSaveClick = () => {
-    dispatch(editPost({
+    dispatch(updatePost({
       id: post.id,
-      newText: editText,
-      newMediaItems: mediaItems
+      text: editText,
+      mediaItems: mediaItems
     }));
     setIsEditModalOpen(false);
   };
@@ -92,13 +80,6 @@ const PostContent: React.FC<PostContentProps> = ({ post }) => {
     
     return url;
   };
-
-  interface MediaSelectionParams {
-    type: string;
-    media: {
-      url: string;
-    };
-  }
 
   const handleMediaSelection = (type: string, media: { url: string }) => {
     if (media && media.url) {

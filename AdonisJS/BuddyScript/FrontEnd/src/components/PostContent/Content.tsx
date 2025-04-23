@@ -10,15 +10,8 @@ const Content: React.FC<ContentProps> = ({ post }) => {
   const [lightboxOpen, setLightboxOpen] = useState<boolean>(false);
   const [selectedMediaIndex, setSelectedMediaIndex] = useState<number>(0);
   
-  // Check for multiple media items first (new structure)
-  const hasMultipleMedia = post.mediaItems && post.mediaItems.length > 0;
-  // Check for single media (backward compatibility)
-  const hasSingleMedia = !hasMultipleMedia && post.mediaUrl && post.mediaType;
-
   // Get all media items in a consistent format
-  const allMediaItems: MediaItem[] = hasMultipleMedia 
-    ? post.mediaItems as MediaItem[]
-    : (hasSingleMedia ? [{ type: post.mediaType as string, url: post.mediaUrl as string }] : []);
+  const allMediaItems: MediaItem[] = post.mediaItems || [];
   
   // Function to handle clicking on a media item
   const handleMediaClick = (index: number) => {

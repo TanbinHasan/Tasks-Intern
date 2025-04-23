@@ -11,32 +11,69 @@ export default class AuthController {
   
   public async register({ response, request }: HttpContext) {
     const payload = await request.validateUsing(RegisterValidator)
-    console.log({payload})
+    console.log({ payload })
     const user = await this.userService.registerUser(payload)
     return response.send(user)
   }
   
-  public async login({ auth, request }: HttpContext) {
+  public async login({ auth, request, response }: HttpContext) {
     const payload = await request.validateUsing(LoginValidator)
-    const user = await this.userService.login(payload)
-    await auth.use('web').login(user)
-    return auth.use('web').user
+    try {
+      const user = await this.userService.login(payload)
+
+      // Log the user in with the web guard
+      await auth.use('web').login(user)
+
+      // Return user data
+      return response.json(auth.use('web').user)
+    } catch (error: any) {
+      return response.status(401).json({
+        status: 'error',
+        message: error.message || 'Invalid credentials'
+      })
+    }
   }
   
-  public async isLoggedIn({ auth }: HttpContext) {
+  public async isLoggedIn({ auth, response }: HttpContext) {
     try {
-      const user = await auth.use('web').authenticate()
-      return user
-    } catch {
-      return null
+      // Check if user is authenticated
+      const isAuthenticated = await auth.use('web').check()
+      
+      if (!isAuthenticated) {
+        // Return null for unauthorized access
+        return response.status(401).json(null)
+      }
+      
+      // If authenticated, return the user
+      return response.json(auth.use('web').user)
+    } catch (error) {
+      console.log('Authentication error:', error.message)
+      return response.status(401).json(null)
     }
   }
   
   public async logout({ auth, response }: HttpContext) {
-    await auth.use('web').logout()
-    return response.send({ message: 'Logged out successfully' })
+    try {
+      // Logout the user
+      await auth.use('web').logout()
+      
+      // Clear cookies
+      response.clearCookie('adonis-session')
+      response.clearCookie('adonis-session-values')
+      
+      return response.status(200).json({
+        status: 'success',
+        message: 'Logged out successfully'
+      })
+    } catch (error) {
+      console.error('Logout error:', error)
+      return response.status(500).json({
+        status: 'error',
+        message: 'Failed to logout'
+      })
+    }
   }
-  
+
   public async deleteUser({ auth, response }: HttpContext) {
     try {
       const user = auth.getUserOrFail()

@@ -17,10 +17,17 @@ const SinglePost: React.FC<SinglePostProps> = ({ postId }) => {
   // If the post is not found, return null
   if (!post) return null;
 
+  // Debug post data
+  /* console.log('Rendering post:', {
+    id: post.id,
+    user: post.user,
+    text: post.text.substring(0, 20) + '...'
+  }); */
+
   return (
     <>
       <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
-        <PostContent post={post} /> {/* Pass post to PostContent */}
+        <PostContent post={post} />
         <RCS_Counter post={post} />
         <RCS_Btn post={post} />
         <CommentSection postId={post.id} />

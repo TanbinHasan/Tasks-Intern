@@ -1,24 +1,27 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../index';
+import conf from '../../conf/conf';
 
 // Define types
 export interface User {
-  id?: string;
+  id?: number;
   name?: string;
   email?: string;
-  password?: string;
-  displayName?: string;
 }
 
 interface UserState {
   user: User | null;
   userReactions: Record<string, boolean>;
+  loading: boolean;
+  error: string | null;
 }
 
 // Initial state
 const initialState: UserState = {
   user: null,
   userReactions: {},
+  loading: false,
+  error: null
 };
 
 // Login payload interface
@@ -34,34 +37,92 @@ interface ReactionPayload {
   hasReacted: boolean;
 }
 
-// Async thunks
 export const loginUser = createAsyncThunk(
   'user/login',
   async ({ email, password }: LoginCredentials, { rejectWithValue }) => {
     try {
-      const storedUserJSON = localStorage.getItem(email);
-      if (!storedUserJSON) {
-        console.error("No user found with this email");
-        return rejectWithValue("Invalid email or password");
+      // console.log('Attempting login with:', { email });
+      
+      const response = await fetch(`${conf.apiUrl}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // Important for cookies
+        body: JSON.stringify({ email, password })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("Login failed:", errorData);
+        return rejectWithValue(errorData.message || "Invalid credentials");
       }
-      const storedUser = JSON.parse(storedUserJSON);
-      if (storedUser && storedUser.password === password) {
-        // Store active user in localStorage
-        localStorage.setItem('activeUser', JSON.stringify(storedUser));
-        
-        // Load user's reactions
-        const savedReactions = localStorage.getItem(`userReactions_${email}`);
-        const reactions = savedReactions ? JSON.parse(savedReactions) : {};
-        
-        return {
-          user: storedUser,
-          userReactions: reactions
-        };
-      }
-      return rejectWithValue("Invalid email or password");
+
+      const userData = await response.json();
+      console.log("Login successful, user data:", userData);
+      
+      return userData;
     } catch (error) {
       console.error("Error during login:", error);
       return rejectWithValue("Login failed");
+    }
+  }
+);
+
+export const isLoggedIn = createAsyncThunk(
+  'user/isLoggedIn',
+  async (_, { rejectWithValue }) => {
+    try {
+      // console.log('Checking if user is logged in');
+      
+      const response = await fetch(`${conf.apiUrl}/auth/is-logged-in`, {
+        method: 'GET',
+        credentials: 'include', // Important for cookies
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+
+      if (!response.ok) {
+        console.log('User is not logged in, status:', response.status);
+        return rejectWithValue('Not authenticated');
+      }
+
+      const userData = await response.json();
+      // console.log('User is logged in:', userData);
+      return userData;
+    } catch (error) {
+      console.error('Auth check error:', error);
+      return rejectWithValue('Authentication check failed');
+    }
+  }
+);
+
+export const logoutUser = createAsyncThunk(
+  'user/logout',
+  async (_, { rejectWithValue }) => {
+    try {
+      console.log('Attempting to logout...'); 
+      
+      const response = await fetch(`${conf.apiUrl}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      });
+      
+      console.log('Logout response:', response.status);
+      
+      if (!response.ok) {
+        console.error('Logout failed with status:', response.status);
+        return rejectWithValue('Logout failed');
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Logout error:', error);
+      return rejectWithValue('Logout failed');
     }
   }
 );
@@ -72,71 +133,82 @@ const userSlice = createSlice({
   reducers: {
     setUser: (state, action: PayloadAction<User | null>) => {
       state.user = action.payload;
-      if (action.payload) {
-        localStorage.setItem('activeUser', JSON.stringify(action.payload));
-      }
     },
 
-    logoutUser: (state) => {
+    // Renamed to clearUserState to avoid conflict with the logoutUser thunk
+    clearUserState: (state) => {
       state.user = null;
       state.userReactions = {};
-      localStorage.removeItem('activeUser');
+      state.loading = false;
+      state.error = null;
     },
 
     setReaction: (state, action: PayloadAction<ReactionPayload>) => {
       const { type, id, hasReacted } = action.payload;
-      if (!state.user || !state.user.email) return;
+      if (!state.user) return;
       const reactionKey = `${type}_${id}`;
       state.userReactions[reactionKey] = hasReacted;
-      // Save to localStorage
-      localStorage.setItem(`userReactions_${state.user.email}`, JSON.stringify(state.userReactions));
     },
-
-    syncWithLocalStorage: (state) => {
-      const activeUser = localStorage.getItem('activeUser');
-      if (activeUser) {
-        try {
-          const userData = JSON.parse(activeUser);
-          state.user = userData;
-          if (userData && userData.email) {
-            const savedReactions = localStorage.getItem(`userReactions_${userData.email}`);
-            if (savedReactions) {
-              state.userReactions = JSON.parse(savedReactions);
-            } else {
-              state.userReactions = {};
-            }
-          }
-        } catch (e) {
-          console.error("Failed to parse user data", e);
-          localStorage.removeItem('activeUser');
-          state.user = null;
-          state.userReactions = {};
-        }
-      } else {
-        state.user = null;
-        state.userReactions = {};
-      }
+    
+    clearError: (state) => {
+      state.error = null;
     }
   },
   extraReducers: (builder) => {
     builder
+      .addCase(loginUser.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
       .addCase(loginUser.fulfilled, (state, action) => {
-        state.user = action.payload.user;
-        state.userReactions = action.payload.userReactions;
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(loginUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+      
+      .addCase(isLoggedIn.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(isLoggedIn.fulfilled, (state, action) => {
+        state.loading = false;
+        state.user = action.payload;
+      })
+      .addCase(isLoggedIn.rejected, (state) => {
+        state.loading = false;
+        state.user = null;
+      })
+      
+      .addCase(logoutUser.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(logoutUser.fulfilled, (state) => {
+        state.user = null;
+        state.userReactions = {};
+        state.loading = false;
+        state.error = null;
+      })
+      .addCase(logoutUser.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   }
 });
 
-// Export actions
-export const { setUser, logoutUser, setReaction, syncWithLocalStorage } = userSlice.actions;
+// Export actions with the renamed clearUserState
+export const { setUser, clearUserState, setReaction, clearError } = userSlice.actions;
 
 // Export selectors
 export const selectUser = (state: RootState) => state.user.user;
 export const selectUserReactions = (state: RootState) => state.user.userReactions;
+export const selectUserLoading = (state: RootState) => state.user.loading;
+export const selectUserError = (state: RootState) => state.user.error;
 
 // Selector for checking if user has reacted to content
 export const selectHasReacted = (state: RootState, type: string, id: number) => {
-  if (!state.user.user || !state.user.user.email) return false;
+  if (!state.user.user) return false;
   const reactionKey = `${type}_${id}`;
   return !!state.user.userReactions[reactionKey];
 };

@@ -25,7 +25,11 @@ export default class PostsQuery {
   }
 
   public async findAll() {
-    return Posts.query().orderBy('timestamp', 'desc');
+    return Posts.query()
+      .preload('user')
+      .preload('mediaItems')
+      .preload('likes')
+      .orderBy('timestamp', 'desc');
   }
 
   public async create(data: {
@@ -94,5 +98,13 @@ export default class PostsQuery {
 
     await like.delete();
     return true;
+  }
+
+  // Add this method to the PostsQuery class
+  public async findByIdWithUser(id: number) {
+    return Posts.query()
+      .where('id', id)
+      .preload('user')
+      .first();
   }
 }

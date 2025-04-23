@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
-import { loginUser } from '../store/slices/userSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, selectUserError, selectUserLoading } from '../store/slices/userSlice';
 import { AppDispatch } from '../store';
 
 const LogIn: React.FC = () => {
@@ -10,23 +10,49 @@ const LogIn: React.FC = () => {
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string>('');
   const [rememberMe, setRememberMe] = useState<boolean>(false);
+  const isLoading = useSelector(selectUserLoading);
+  const loginError = useSelector(selectUserError);
   const navigate = useNavigate();
 
   useEffect(() => {
     const rememberedUser = localStorage.getItem('rememberedUser');
     if (rememberedUser) {
-      const userData = JSON.parse(rememberedUser);
-      setEmail(userData.email);
-      setPassword(userData.password);
-      setRememberMe(true);
+      try {
+        const userData = JSON.parse(rememberedUser);
+        setEmail(userData.email);
+        setPassword(userData.password);
+        setRememberMe(true);
+      } catch (e) {
+        console.error("Failed to parse remembered user data");
+        localStorage.removeItem('rememberedUser');
+      }
     }
   }, []);
+
+  useEffect(() => {
+    // Update local error state when redux state changes
+    if (loginError) {
+      setError(loginError);
+    }
+  }, [loginError]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    if (!email.trim()) {
+      setError('Email is required');
+      return;
+    }
+    
+    if (!password.trim()) {
+      setError('Password is required');
+      return;
+    }
+
     try {
       await dispatch(loginUser({ email, password })).unwrap();
+
       if (rememberMe) {
         localStorage.setItem('rememberedUser', JSON.stringify({ email, password }));
       } else {

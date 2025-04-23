@@ -2,7 +2,6 @@ import React from 'react';
 import SinglePost from '../SinglePost/SinglePost';
 import { useSelector } from 'react-redux';
 import { selectAllPosts } from '../../store/slices/postSlice';
-import { RootState } from '../../store';
 
 const AllPosts: React.FC = () => {
   const posts = useSelector(selectAllPosts);

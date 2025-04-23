@@ -19,13 +19,6 @@ interface TouchedFields {
   terms: boolean;
 }
 
-// User data interface
-interface UserData {
-  name: string;
-  email: string;
-  password: string;
-}
-
 const Register: React.FC = () => {
   const [name, setName] = useState<string>("");
   const [email, setEmail] = useState<string>("");
@@ -33,6 +26,7 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
   const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [passwordCriteria, setPasswordCriteria] = useState<PasswordCriteria>({
     length: false,
     uppercase: false,
@@ -103,10 +97,6 @@ const Register: React.FC = () => {
       return "Email is required.";
     }
     
-    if (localStorage.getItem(email) !== null) {
-      return "Email already exists. Please choose another.";
-    }
-    
     if (!password) {
       return "Password is required.";
     }
@@ -131,21 +121,48 @@ const Register: React.FC = () => {
     return "";
   };
 
-  const registerNewUser = async (name: string,email:string, password:string,) => {
+  const registerNewUser = async (name: string, email: string, password: string) => {
     const payload = {
       name,
       email,
       password,
     }
-    const res = await fetch(`${conf.apiUrl}/auth/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify(payload)
-    })
+    try {
+      const response = await fetch(`${conf.apiUrl}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
+      
+      return response.json();
+    } catch (error) {
+      console.error("Registration error:", error);
+      throw error;
+    }
   }
 
-  const handleSubmit = (e: FormEvent): void => {
+  const loginAfterRegistration = async (email: string, password: string) => {
+    const payload = {
+      email,
+      password,
+    }
+    try {
+      const response = await fetch(`${conf.apiUrl}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
+      
+      return response.json();
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
+    }
+  }
+
+  const handleSubmit = async(e: FormEvent): Promise<void> => {
     e.preventDefault();
   
     setTouched({
@@ -162,28 +179,26 @@ const Register: React.FC = () => {
       alert(validationError);
       return;
     }
-  
-    if (localStorage.getItem(email)) {
-      setError("Email already exists. Please choose another.");
-      alert("Email already exists. Please choose another.");
-      return;
+
+    setIsLoading(true);
+
+    try {
+      await registerNewUser(name, email, password);
+
+      try {
+        await loginAfterRegistration(email, password);
+        alert("Registration successful!");
+        navigate("/");
+      } catch(loginError) {
+        alert("Registration successful! Please try to log in again");
+        navigate("/");
+      } 
+    }  catch (registerError: any) {
+      // Registration failed
+      setError(registerError.message || "Registration failed. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
-  
-    // Create user data object with name included
-    const userData: UserData = { name, email, password };
-    registerNewUser(name,email, password)
-    // Store in localStorage - both under email key and as activeUser
-    localStorage.setItem(email, JSON.stringify(userData));
-    localStorage.setItem('activeUser', JSON.stringify(userData));
-    
-    // For debugging - check what was stored
-    console.log("Stored user data:", userData);
-    console.log("From localStorage:", JSON.parse(localStorage.getItem(email) || '{}'));
-    console.log("Active user:", JSON.parse(localStorage.getItem('activeUser') || '{}'));
-    
-    alert("Registration successful!");
-    setError("");
-    navigate("/");
   };
   
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -202,13 +217,8 @@ const Register: React.FC = () => {
     const value = e.target.value;
     setEmail(value);
     setTouched({ ...touched, email: true });
-  
-    if (value && localStorage.getItem(value) !== null) {
-      setError("Email already exists. Please choose another.");
-    } else {
-      setError("");
-    }
-  };  
+    setError("");
+  };
 
   const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value;

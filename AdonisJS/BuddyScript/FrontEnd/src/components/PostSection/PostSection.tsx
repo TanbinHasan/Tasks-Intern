@@ -3,18 +3,16 @@ import MediaButtons from './MediaButtons';
 import TextArea from './TextArea';
 import PostButton from './PostButton';
 import Modal from './Modal';
-import { useDispatch, useSelector } from 'react-redux';
-import { addPost, MediaItem } from '../../store/slices/postSlice';
-import { selectUser } from '../../store/slices/userSlice';
+import { useDispatch } from 'react-redux';
+import { createPost, MediaItem } from '../../store/slices/postSlice';
 import { AppDispatch } from '../../store';
 
 interface PostSectionProps {
   userEmail?: string;
 }
 
-const PostSection: React.FC<PostSectionProps> = ({ userEmail }) => {
+const PostSection: React.FC<PostSectionProps> = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const user = useSelector(selectUser);
   const [postContent, setPostContent] = useState<string>('');
   // Change from single media to array of media items
   const [mediaItems, setMediaItems] = useState<MediaItem[]>([]);
@@ -22,11 +20,9 @@ const PostSection: React.FC<PostSectionProps> = ({ userEmail }) => {
 
   const handlePostClick = () => {
     if (postContent.trim() !== '' || mediaItems.length > 0) {
-      dispatch(addPost({
+      dispatch(createPost({
         text: postContent,
-        mediaItems: mediaItems, // Send array of media items
-        email: user?.email || '',
-        name: user?.name || ''
+        mediaItems: mediaItems
       }));
       setPostContent('');
       setMediaItems([]);

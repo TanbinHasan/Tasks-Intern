@@ -1,5 +1,6 @@
 import { inject } from "@adonisjs/core";
 import PostsQuery from "./posts_query.js";
+import User from "#models/users";
 
 @inject()
 export default class PostsService {
@@ -38,6 +39,15 @@ export default class PostsService {
     text: string,
     timestamp: number
   }) {
+    // Verify the user exists before creating the post
+    const user = await User.find(data.user_id);
+    
+    if (!user) {
+      const error = new Error(`User with ID ${data.user_id} not found`) as any;
+      error.status = 404;
+      throw error;
+    }
+    
     return this.postsQuery.create(data);
   }
 

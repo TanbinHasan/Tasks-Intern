@@ -4,8 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import LogIn from './components/LogIn';
 import Register from './components/Register';
 import Feed from './components/Feed';
-import { syncWithLocalStorage, selectUser } from './store/slices/userSlice';
-import { loadPostsFromStorage, updateTimeAgo } from './store/slices/postSlice';
+import { isLoggedIn, selectUser, selectUserLoading } from './store/slices/userSlice';
+import { updateTimeAgo, fetchPosts } from './store/slices/postSlice';
 import { AppDispatch, RootState } from './store';
 
 interface ProtectedRouteProps {
@@ -14,40 +14,34 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const user = useSelector(selectUser);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const dispatch = useDispatch();
+  const loading = useSelector(selectUserLoading);
+  const dispatch = useDispatch<AppDispatch>();
   
   useEffect(() => {
-    const checkAuth = () => {
-      const activeUser = localStorage.getItem('activeUser');
-      setIsAuthenticated(!!activeUser);
-      setIsLoading(false);
-    };
-
-    // Your existing meta tag and event listener code remains the same
+    // Check authentication status when component mounts
+    dispatch(isLoggedIn());
+    
+    // Add meta tag to prevent caching
     const metaNoCache = document.createElement('meta');
     metaNoCache.setAttribute('http-equiv', 'Cache-Control');
     metaNoCache.setAttribute('content', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     document.head.appendChild(metaNoCache);
     
-    // Rest of the useEffect remains the same
-    
-    // Initial check
-    checkAuth();
-    
     return () => {
-      // Your existing cleanup code
+      // Remove meta tag on cleanup
+      if (metaNoCache.parentNode) {
+        metaNoCache.parentNode.removeChild(metaNoCache);
+      }
     };
-  }, [user]);
+  }, [dispatch]);
 
   // Show loading state
-  if (isLoading) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 
   // Redirect if not authenticated
-  if (!isAuthenticated) {
+  if (!user) {
     return <Navigate to="/" replace />;
   }
 
@@ -77,9 +71,11 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
 
   useEffect(() => {
-    // Initialize Redux store with localStorage data
-    dispatch(syncWithLocalStorage());
-    dispatch(loadPostsFromStorage());
+    // Check if user is logged in when app initializes
+    dispatch(isLoggedIn());
+    
+    // Fetch posts data from API
+    dispatch(fetchPosts());
 
     // Set up timer for updating timeAgo
     const intervalId = setInterval(() => {

@@ -25,22 +25,23 @@ export default class Posts extends BaseModel {
   declare updated_at: Date
 
   @belongsTo(() => Users, {
-    foreignKey: 'user_id'
+    foreignKey: 'user_id',
+    localKey: 'id' // Explicitly define the local key
   })
   declare user: BelongsTo<typeof Users>
 
   @hasMany(() => MediaItems, {
-    foreignKey: 'post_id'
+    foreignKey: 'post_id',
   })
   declare mediaItems: HasMany<typeof MediaItems>
 
   @hasMany(() => Comments, {
-    foreignKey: 'post_id'
+    foreignKey: 'post_id',
   })
   declare comments: HasMany<typeof Comments>
 
   @hasMany(() => PostLikes, {
-    foreignKey: 'post_id'
+    foreignKey: 'post_id',
   })
   declare likes: HasMany<typeof PostLikes>
 }

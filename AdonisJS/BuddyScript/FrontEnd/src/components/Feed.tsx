@@ -3,7 +3,6 @@ import PostSection from './PostSection/PostSection'
 import AllPosts from './NewsFeedSection/AllPosts'
 import NavBarSection from './NavBarSection/NavBarSection'
 import DarkModeToggle from './DarkMode/DarkModeToggle'
-import './DarkMode/darkMode.css'
 
 const Feed: React.FC = () => {
 
@@ -629,7 +628,7 @@ const Feed: React.FC = () => {
                     <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                       <div className="_header_mobile_menu_top_inner">
                         <div className="_header_mobile_menu_logo">
-                          <a href="feed.html" clas="_mobile_logo_link">
+                          <a href="feed.html" className="_mobile_logo_link">
                             <img
                               src="assets/images/logo.svg"
                               alt="Image"

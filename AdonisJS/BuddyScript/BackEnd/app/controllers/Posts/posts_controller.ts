@@ -53,10 +53,18 @@ export default class PostsController {
     await request.validateUsing(postsValidator.getAllPosts, {
       data: {}
     })
-
+  
     try {
-      const posts = await this.postsService.getAllPosts()
-
+      const posts = await this.postsService.getAllPosts();
+      
+      // Debug log to check if posts have media items
+      console.log(`Returning ${posts.length} posts with media items:`, 
+        posts.map(p => ({
+          id: p.id, 
+          mediaCount: p.mediaItems ? p.mediaItems.length : 0
+        }))
+      );
+  
       return response.json({
         status: 'success',
         data: posts
@@ -69,13 +77,30 @@ export default class PostsController {
     }
   }
 
-  public async createPost({ request, response }: HttpContext) {
+  public async createPost({ request, response, auth }: HttpContext) {
     const data = await request.validateUsing(postsValidator.createPost)
     
     try {
+      // Try to get the authenticated user
+      let userId;
+      try {
+        const user = await auth.authenticate();
+        userId = user.id;
+      } catch (authError) {
+        // If authentication fails, check if user_id was provided in request
+        userId = request.input('user_id');
+        
+        if (!userId) {
+          return response.status(401).json({
+            status: 'error',
+            message: 'Authentication required to create a post'
+          });
+        }
+      }
+      
       const postData = {
         ...data,
-        user_id: request.input('user_id', 1), // Default to user_id 1 if not provided
+        user_id: userId,
         timestamp: Math.floor(Date.now() / 1000)
       }
       
@@ -93,7 +118,7 @@ export default class PostsController {
     }
   }
 
-  public async updatePost({ request, response, params }: HttpContext) {
+  public async updatePost({ request, response, params, auth }: HttpContext) {
     const { id } = await request.validateUsing(postsValidator.getPostById, {
       data: {id: Number(params.id)}
     })
@@ -101,7 +126,23 @@ export default class PostsController {
     const data = await request.validateUsing(postsValidator.updatePost)
     
     try {
-      const userId = request.input('user_id', 1) // Default to user_id 1 if not provided
+      // Try to get the authenticated user
+      let userId;
+      try {
+        const user = await auth.authenticate();
+        userId = user.id;
+      } catch (authError) {
+        // If authentication fails, check if user_id was provided in request
+        userId = request.input('user_id');
+        
+        if (!userId) {
+          return response.status(401).json({
+            status: 'error',
+            message: 'Authentication required to update a post'
+          });
+        }
+      }
+      
       const post = await this.postsService.updatePost(id, userId, data)
       
       return response.json({
@@ -116,13 +157,29 @@ export default class PostsController {
     }
   }
 
-  public async deletePost({ request, response, params }: HttpContext) {
+  public async deletePost({ request, response, params, auth }: HttpContext) {
     const { id } = await request.validateUsing(postsValidator.deletePost, {
       data: {id: Number(params.id)}
     })
     
     try {
-      const userId = request.input('user_id', 1) // Default to user_id 1 if not provided
+      // Try to get the authenticated user
+      let userId;
+      try {
+        const user = await auth.authenticate();
+        userId = user.id;
+      } catch (authError) {
+        // If authentication fails, check if user_id was provided in request
+        userId = request.input('user_id');
+        
+        if (!userId) {
+          return response.status(401).json({
+            status: 'error',
+            message: 'Authentication required to delete a post'
+          });
+        }
+      }
+      
       await this.postsService.deletePost(id, userId)
       
       return response.json({
@@ -197,14 +254,29 @@ export default class PostsController {
     }
   }
 
-  public async likePost({ request, response, params }: HttpContext) {
+  public async likePost({ request, response, params, auth }: HttpContext) {
     const { id } = await request.validateUsing(postsValidator.likePost, {
       data: {id: Number(params.id)}
     })
     
     try {
-      // Get user_id from request instead of auth
-      const userId = request.input('user_id', 1) // Default to user_id 1 if not provided
+      // Try to get the authenticated user
+      let userId;
+      try {
+        const user = await auth.authenticate();
+        userId = user.id;
+      } catch (authError) {
+        // If authentication fails, check if user_id was provided in request
+        userId = request.input('user_id');
+        
+        if (!userId) {
+          return response.status(401).json({
+            status: 'error',
+            message: 'Authentication required to like a post'
+          });
+        }
+      }
+      
       const like = await this.postsService.likePost(id, userId)
       
       return response.status(201).json({
@@ -219,14 +291,29 @@ export default class PostsController {
     }
   }
 
-  public async unlikePost({ request, response, params }: HttpContext) {
+  public async unlikePost({ request, response, params, auth }: HttpContext) {
     const { id } = await request.validateUsing(postsValidator.unlikePost, {
       data: {id: Number(params.id)}
     })
     
     try {
-      // Get user_id from request instead of auth
-      const userId = request.input('user_id', 1) // Default to user_id 1 if not provided
+      // Try to get the authenticated user
+      let userId;
+      try {
+        const user = await auth.authenticate();
+        userId = user.id;
+      } catch (authError) {
+        // If authentication fails, check if user_id was provided in request
+        userId = request.input('user_id');
+        
+        if (!userId) {
+          return response.status(401).json({
+            status: 'error',
+            message: 'Authentication required to unlike a post'
+          });
+        }
+      }
+      
       await this.postsService.unlikePost(id, userId)
       
       return response.json({

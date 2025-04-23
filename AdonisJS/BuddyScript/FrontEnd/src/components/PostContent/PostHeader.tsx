@@ -8,6 +8,11 @@ interface PostHeaderProps {
 }
 
 const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
+  // Determine user name with fallbacks
+  const userName = post.user?.name || (post.user?.email ? post.user.email.split('@')[0] : "Unknown User");
+  
+  // console.log('Post header user data:', post.user);
+  
   return (
     <>
       <div className="_feed_inner_timeline_post_box">
@@ -20,7 +25,7 @@ const PostHeader: React.FC<PostHeaderProps> = ({ post }) => {
         </div>
         <div className="_feed_inner_timeline_post_box_txt">
           <h4 className="_feed_inner_timeline_post_box_title">
-            {post.name}
+            {userName}
           </h4>
           <p className="_feed_inner_timeline_post_box_para">
             {post.timeAgo} <a href="#0"><FontAwesomeIcon icon={faGlobe} /> Public</a>
