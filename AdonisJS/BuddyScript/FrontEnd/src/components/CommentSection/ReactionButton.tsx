@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { likePost, likeComment } from '../../store/slices/postSlice';
-import { selectUser } from '../../store/slices/userSlice';
+import { likePost, unlikePost, likeComment, unlikeComment } from '../../store/slices/postSlice';
+import { selectUser, selectHasReacted } from '../../store/slices/userSlice';
+import { AppDispatch, RootState } from '../../store';
 
 interface ReactionButtonsProps {
   postId: number;
@@ -10,26 +11,44 @@ interface ReactionButtonsProps {
 }
 
 const ReactionButtons: React.FC<ReactionButtonsProps> = ({ postId, commentId, currentLikes }) => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
   const [localLikes, setLocalLikes] = useState<number>(currentLikes || 0);
-  const [isLiked, setIsLiked] = useState<boolean>(false);
+  
+  // Use the Redux state to determine if the item is liked
+  const reactionType = commentId ? 'comment' : 'post';
+  const reactionId = commentId || postId;
+  const isLiked = useSelector((state: RootState) => 
+    selectHasReacted(state, reactionType, reactionId)
+  );
+
+  // Update local likes when props change
+  useEffect(() => {
+    setLocalLikes(currentLikes || 0);
+  }, [currentLikes]);
 
   const handleLike = () => {
-    if (!user || !user.email) return;
+    if (!user || !user.id) return;
     
-    // Toggle like state
-    const newLikedState = !isLiked;
-    setIsLiked(newLikedState);
-    
-    // Update local likes count based on the new state
-    setLocalLikes(prev => newLikedState ? prev + 1 : Math.max(0, prev - 1));
-    
-    // Call appropriate Redux action
-    if (commentId) {
-      dispatch(likeComment({ postId, commentId, userEmail: user.email }));
+    // Toggle like state based on current state
+    if (isLiked) {
+      // Unlike
+      if (commentId) {
+        dispatch(unlikeComment({ postId, commentId }));
+      } else {
+        dispatch(unlikePost(postId));
+      }
+      // Update UI optimistically
+      setLocalLikes(prev => Math.max(0, prev - 1));
     } else {
-      dispatch(likePost({ id: postId, userEmail: user.email }));
+      // Like
+      if (commentId) {
+        dispatch(likeComment({ postId, commentId }));
+      } else {
+        dispatch(likePost(postId));
+      }
+      // Update UI optimistically
+      setLocalLikes(prev => prev + 1);
     }
   };
 

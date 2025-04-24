@@ -16,19 +16,51 @@ export default class PostsQuery {
       .preload('user')
       .preload('mediaItems')
       .preload('comments', (query) => {
-        query.orderBy('timestamp', 'desc').preload('user')
+        query
+          .orderBy('timestamp', 'desc')
+          .preload('user')
+          .preload('likes', (likesQuery) => {
+            likesQuery.preload('user');
+          })
+          .preload('replies', (repliesQuery) => {
+            repliesQuery
+              .orderBy('timestamp', 'desc')
+              .preload('user')
+              .preload('likes', (replyLikesQuery) => {
+                replyLikesQuery.preload('user');
+              });
+          });
       })
       .preload('likes', (query) => {
-        query.preload('user')
+        query.preload('user');
       })
       .first();
   }
 
   public async findAll() {
+    // Update this to match the findByIdWithRelations method
     return Posts.query()
       .preload('user')
       .preload('mediaItems')
-      .preload('likes')
+      .preload('comments', (query) => {
+        query
+          .orderBy('timestamp', 'desc')
+          .preload('user')
+          .preload('likes', (likesQuery) => {
+            likesQuery.preload('user');
+          })
+          .preload('replies', (repliesQuery) => {
+            repliesQuery
+              .orderBy('timestamp', 'desc')
+              .preload('user')
+              .preload('likes', (replyLikesQuery) => {
+                replyLikesQuery.preload('user');
+              });
+          });
+      })
+      .preload('likes', (query) => {
+        query.preload('user');
+      })
       .orderBy('timestamp', 'desc');
   }
 
@@ -68,7 +100,17 @@ export default class PostsQuery {
   }
 
   public async findPostComments(postId: number) {
-    return Comments.query().where('post_id', postId).orderBy('timestamp', 'desc');
+    return Comments.query()
+      .where('post_id', postId)
+      .orderBy('timestamp', 'desc')
+      .preload('user')
+      .preload('replies', (query) => {
+        query
+          .orderBy('timestamp', 'desc')
+          .preload('user')
+          .preload('likes');
+      })
+      .preload('likes');
   }
 
   public async findUserPosts(userId: number) {
@@ -100,7 +142,6 @@ export default class PostsQuery {
     return true;
   }
 
-  // Add this method to the PostsQuery class
   public async findByIdWithUser(id: number) {
     return Posts.query()
       .where('id', id)

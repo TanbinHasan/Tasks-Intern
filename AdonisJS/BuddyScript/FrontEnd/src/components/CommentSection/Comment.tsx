@@ -4,16 +4,22 @@ import ReactionButtons from './ReactionButton';
 import { addReply, selectPostById } from '../../store/slices/postSlice';
 import { selectUser } from '../../store/slices/userSlice';
 import { RootState } from '../../store';
+import { AppDispatch } from '../../store';
 
+// Type definitions for the component props and state
 interface Reply {
   id: number;
+  comment_id: number;
+  user_id: number;
   text: string;
-  username: string;
-  userId: string;
   timestamp: number;
   timeAgo: string;
-  likes: number;
-  likedBy?: string[];
+  likes: number | any[];
+  user?: {
+    id: number;
+    name: string;
+    email?: string;
+  };
 }
 
 interface CommentProps {
@@ -21,7 +27,7 @@ interface CommentProps {
   commentId: number;
   username: string;
   content: string;
-  reactionCount: number;
+  reactionCount: number | any[];
   timeAgo: string;
   replies?: Reply[];
 }
@@ -39,9 +45,12 @@ const Comment: React.FC<CommentProps> = ({
   const [replyText, setReplyText] = useState<string>('');
   const [localReplies, setLocalReplies] = useState<Reply[]>(replies || []);
   const [showAllReplies, setShowAllReplies] = useState<boolean>(false);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const post = useSelector((state: RootState) => selectPostById(state, postId));
   const user = useSelector(selectUser);
+  
+  // Get the number of likes
+  const likesCount = Array.isArray(reactionCount) ? reactionCount.length : reactionCount;
   
   // Get the latest replies whenever posts change
   useEffect(() => {
@@ -65,36 +74,26 @@ const Comment: React.FC<CommentProps> = ({
     setShowAllReplies(true);
   };
 
-  const handleNameClick = (e: React.MouseEvent, userId?: string) => {
-    e.preventDefault();
-    console.log(`Navigating to profile of user: ${userId || 'anonymous'}`);
-    alert(`This would navigate to ${username}'s profile`);
-  };
-
   const submitReply = (e: React.FormEvent) => {
     e.preventDefault();
-    if (replyText.trim()) {
-      const timestamp = Date.now();
-      const displayName = user?.displayName || user?.name || 'Anonymous User';
+    if (replyText.trim() && user?.id) {
+      dispatch(addReply({ 
+        postId, 
+        commentId, 
+        text: replyText 
+      }));
       
-      const newReply: Reply = {
-        id: timestamp,
-        text: replyText,
-        username: displayName,
-        userId: user?.id || 'anonymous',
-        timestamp,
-        timeAgo: 'Just now',
-        likes: 0
-      };
-      
-      dispatch(addReply({ postId, commentId, reply: newReply }));
       setReplyText('');
       setShowReplyForm(false);
     }
   };
 
   // Show the most recent replies if not showing all
-  const displayReplies = showAllReplies ? localReplies : (localReplies.length > 1 ? [localReplies[0], localReplies[localReplies.length-1]] : localReplies);
+  const displayReplies = showAllReplies 
+    ? localReplies 
+    : (localReplies.length > 1 
+        ? [localReplies[0], localReplies[localReplies.length-1]] 
+        : localReplies);
 
   return (
     <div className="_comment_main" style={{
@@ -102,16 +101,15 @@ const Comment: React.FC<CommentProps> = ({
       padding: '4px 16px',
       width: '100%',
       boxSizing: 'border-box',
+      marginBottom: '8px'
     }}>
       <div className="_comment_image">
-        <a href="#" className="_comment_image_link" onClick={(e) => handleNameClick(e)}>
-          <img 
-            src="assets/images/txt_img.png" 
-            alt="" 
-            className="_comment_img1" 
-            style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
-          />
-        </a>
+        <img 
+          src="assets/images/txt_img.png" 
+          alt="" 
+          className="_comment_img1" 
+          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
+        />
       </div>
       <div className="_comment_area" style={{
         flex: 1,
@@ -128,25 +126,18 @@ const Comment: React.FC<CommentProps> = ({
             maxWidth: '100%',
           }}>
             <div className="_comment_name" style={{ marginBottom: '1px' }}>
-              <a 
-                href="#" 
-                onClick={(e) => handleNameClick(e)} 
-                style={{ textDecoration: 'none' }}
+              <h4 
+                className="_comment_name_title" 
+                style={{ 
+                  fontSize: '0.8125rem', 
+                  margin: '0', 
+                  fontWeight: 'bold', 
+                  color: '#050505',
+                  lineHeight: '1.2',
+                }}
               >
-                <h4 
-                  className="_comment_name_title" 
-                  style={{ 
-                    fontSize: '0.8125rem', 
-                    margin: '0', 
-                    fontWeight: 'bold', 
-                    color: '#050505',
-                    cursor: 'pointer',
-                    lineHeight: '1.2',
-                  }}
-                >
-                  {username || 'Anonymous User'}
-                </h4>
-              </a>
+                {username || 'Anonymous User'}
+              </h4>
             </div>
             <p className="_comment_status_text" style={{ 
               margin: '0', 
@@ -163,7 +154,7 @@ const Comment: React.FC<CommentProps> = ({
             margin: '2px 0 0 12px',
             fontSize: '0.75rem'
           }}>
-            <ReactionButtons postId={postId} commentId={commentId} currentLikes={reactionCount} />
+            <ReactionButtons postId={postId} commentId={commentId} currentLikes={likesCount} />
             <span 
               onClick={handleReply} 
               style={{ 
@@ -212,69 +203,70 @@ const Comment: React.FC<CommentProps> = ({
             )}
             
             {/* Display replies */}
-            {displayReplies.map(reply => (
-              <div key={reply.id} className="_reply_item" style={{
-                display: 'flex',
-                marginBottom: '2px',
-                width: '100%',
-              }}>
-                <div className="_reply_image">
-                  <a href="#" onClick={(e) => handleNameClick(e, reply.userId)}>
+            {displayReplies.map(reply => {
+              // Get username either from reply.username or reply.user.name
+              const replyUsername = reply.user?.name || (reply.user ? reply.user.name : 'Anonymous');
+              // Get reply likes count
+              const replyLikes = Array.isArray(reply.likes) ? reply.likes.length : reply.likes;
+              
+              return (
+                <div key={reply.id} className="_reply_item" style={{
+                  display: 'flex',
+                  marginBottom: '2px',
+                  width: '100%',
+                }}>
+                  <div className="_reply_image">
                     <img 
                       src="assets/images/txt_img.png" 
                       alt="" 
                       style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} 
                     />
-                  </a>
-                </div>
-                <div style={{ flex: 1, marginLeft: '8px' }}>
-                  <div style={{
-                    backgroundColor: '#F0F2F5',
-                    borderRadius: '18px',
-                    padding: '6px 12px',
-                    marginBottom: '2px',
-                    display: 'inline-block',
-                    maxWidth: '100%',
-                  }}>
-                    <div style={{ marginBottom: '1px' }}>
-                      <a 
-                        href="#" 
-                        onClick={(e) => handleNameClick(e, reply.userId)} 
-                        style={{ textDecoration: 'none' }}
-                      >
+                  </div>
+                  <div style={{ flex: 1, marginLeft: '8px' }}>
+                    <div style={{
+                      backgroundColor: '#F0F2F5',
+                      borderRadius: '18px',
+                      padding: '6px 12px',
+                      marginBottom: '2px',
+                      display: 'inline-block',
+                      maxWidth: '100%',
+                    }}>
+                      <div style={{ marginBottom: '1px' }}>
                         <h4 style={{ 
                           fontSize: '0.8125rem', 
                           margin: '0', 
                           fontWeight: 'bold', 
                           color: '#050505',
-                          cursor: 'pointer',
                           lineHeight: '1.2',
                         }}>
-                          {reply.username || 'Anonymous User'}
+                          {replyUsername}
                         </h4>
-                      </a>
+                      </div>
+                      <p style={{ 
+                        margin: '0', 
+                        fontSize: '0.9375rem',
+                        lineHeight: '1.3333',
+                      }}>
+                        {reply.text}
+                      </p>
                     </div>
-                    <p style={{ 
-                      margin: '0', 
-                      fontSize: '0.9375rem',
-                      lineHeight: '1.3333',
+                    
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      margin: '2px 0 0 12px',
+                      fontSize: '0.75rem'
                     }}>
-                      {reply.text}
-                    </p>
-                  </div>
-                  
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center',
-                    margin: '2px 0 0 12px',
-                    fontSize: '0.75rem'
-                  }}>
-                    <span style={{ fontWeight: '600', color: '#65676B', cursor: 'pointer' }}>Like</span>
-                    <span style={{ marginLeft: '8px', color: '#65676B' }}>{reply.timeAgo}</span>
+                      <span style={{ fontWeight: '600', color: '#65676B', cursor: 'pointer' }}>Like</span>
+                      {replyLikes > 0 && (
+                        <span style={{ marginLeft: '4px', color: '#65676B' }}>{replyLikes}</span>
+                      )}
+                      <span style={{ marginLeft: '8px', color: '#65676B' }}>{reply.timeAgo}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             
             {/* If showing all replies and there are more than 2, add a collapse button */}
             {showAllReplies && localReplies.length > 2 && (
@@ -338,12 +330,12 @@ const Comment: React.FC<CommentProps> = ({
               </div>
               <button 
                 type="submit" 
-                disabled={!replyText.trim()}
+                disabled={!replyText.trim() || !user?.id}
                 style={{
                   background: 'none',
                   border: 'none',
-                  color: replyText.trim() ? '#1877F2' : '#BCC0C4',
-                  cursor: replyText.trim() ? 'pointer' : 'default',
+                  color: replyText.trim() && user?.id ? '#1877F2' : '#BCC0C4',
+                  cursor: replyText.trim() && user?.id ? 'pointer' : 'default',
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">

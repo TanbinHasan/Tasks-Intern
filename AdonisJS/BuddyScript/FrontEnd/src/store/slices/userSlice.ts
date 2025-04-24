@@ -1,6 +1,7 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../index';
 import conf from '../../conf/conf';
+import { clearPostState } from './postSlice'; // Import clearPostState action
 
 // Define types
 export interface User {
@@ -39,16 +40,17 @@ interface ReactionPayload {
 
 export const loginUser = createAsyncThunk(
   'user/login',
-  async ({ email, password }: LoginCredentials, { rejectWithValue }) => {
+  async ({ email, password }: LoginCredentials, { rejectWithValue, dispatch }) => {
     try {
-      // console.log('Attempting login with:', { email });
+      // IMPORTANT: Clear everything first to prevent previous user data from showing
+      dispatch(clearUserState());
       
       const response = await fetch(`${conf.apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', // Important for cookies
+        credentials: 'include',
         body: JSON.stringify({ email, password })
       });
 
@@ -73,11 +75,9 @@ export const isLoggedIn = createAsyncThunk(
   'user/isLoggedIn',
   async (_, { rejectWithValue }) => {
     try {
-      // console.log('Checking if user is logged in');
-      
       const response = await fetch(`${conf.apiUrl}/auth/is-logged-in`, {
         method: 'GET',
-        credentials: 'include', // Important for cookies
+        credentials: 'include',
         headers: {
           'Content-Type': 'application/json',
         }
@@ -89,7 +89,6 @@ export const isLoggedIn = createAsyncThunk(
       }
 
       const userData = await response.json();
-      // console.log('User is logged in:', userData);
       return userData;
     } catch (error) {
       console.error('Auth check error:', error);
@@ -100,9 +99,13 @@ export const isLoggedIn = createAsyncThunk(
 
 export const logoutUser = createAsyncThunk(
   'user/logout',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
       console.log('Attempting to logout...'); 
+      
+      // IMPORTANT: Clear everything first
+      dispatch(clearUserState());
+      dispatch(clearPostState());
       
       const response = await fetch(`${conf.apiUrl}/auth/logout`, {
         method: 'POST',
@@ -111,8 +114,6 @@ export const logoutUser = createAsyncThunk(
           'Content-Type': 'application/json',
         }
       });
-      
-      console.log('Logout response:', response.status);
       
       if (!response.ok) {
         console.error('Logout failed with status:', response.status);
@@ -135,7 +136,6 @@ const userSlice = createSlice({
       state.user = action.payload;
     },
 
-    // Renamed to clearUserState to avoid conflict with the logoutUser thunk
     clearUserState: (state) => {
       state.user = null;
       state.userReactions = {};
@@ -163,6 +163,7 @@ const userSlice = createSlice({
       .addCase(loginUser.fulfilled, (state, action) => {
         state.loading = false;
         state.user = action.payload;
+        state.userReactions = {}; // Reset reactions on login
       })
       .addCase(loginUser.rejected, (state, action) => {
         state.loading = false;
@@ -179,6 +180,7 @@ const userSlice = createSlice({
       .addCase(isLoggedIn.rejected, (state) => {
         state.loading = false;
         state.user = null;
+        state.userReactions = {}; // Clear reactions if not logged in
       })
       
       .addCase(logoutUser.pending, (state) => {
@@ -197,16 +199,13 @@ const userSlice = createSlice({
   }
 });
 
-// Export actions with the renamed clearUserState
 export const { setUser, clearUserState, setReaction, clearError } = userSlice.actions;
 
-// Export selectors
 export const selectUser = (state: RootState) => state.user.user;
 export const selectUserReactions = (state: RootState) => state.user.userReactions;
 export const selectUserLoading = (state: RootState) => state.user.loading;
 export const selectUserError = (state: RootState) => state.user.error;
 
-// Selector for checking if user has reacted to content
 export const selectHasReacted = (state: RootState, type: string, id: number) => {
   if (!state.user.user) return false;
   const reactionKey = `${type}_${id}`;

@@ -27,8 +27,11 @@ const PostContent: React.FC<PostContentProps> = ({ post }) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const dropdownButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Check if user is author based on user_id instead of email
-  const isAuthor = user && user.id === post.user_id;
+  const isAuthor = user && post.user && (
+    Number(user.id) === Number(post.user.id)
+  );
+  
+  // console.log("User ID:", user?.id, "Post user:", post.user?.id, "Is author:", isAuthor);
 
   useEffect(() => {
     // Update mediaItems when post changes

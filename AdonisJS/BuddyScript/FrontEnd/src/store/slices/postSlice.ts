@@ -1,6 +1,7 @@
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createAction, createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { RootState } from '../index';
 import conf from '../../conf/conf';
+import { setReaction } from './userSlice';
 
 // Define types
 export interface MediaItem {
@@ -26,6 +27,7 @@ export interface Reply {
 }
 
 export interface Comment {
+  username: string;
   id: number;
   post_id: number;
   user_id: number;
@@ -41,13 +43,21 @@ export interface Comment {
   };
 }
 
+export interface Like {
+  id: number;
+  postId: number;
+  userId: number;
+  timestamp: number;
+  createdAt: string;
+}
+
 export interface Post {
   id: number;
   user_id: number;
   text: string;
   timestamp: number;
   timeAgo: string;
-  likes: number;
+  likes: Like[];
   comments: Comment[];
   mediaItems?: MediaItem[];
   user?: {
@@ -55,12 +65,18 @@ export interface Post {
     name: string;
     email: string;
   };
+  isLikedByCurrentUser?: boolean;
 }
 
 interface PostState {
   posts: Post[];
   loading: boolean;
   error: string | null;
+}
+
+interface LikeActionPayload {
+  postId: number;
+  isLiked: boolean;
 }
 
 // Helper functions
@@ -86,21 +102,21 @@ const timeAgo = (timestamp: number): string => {
 const updatePostTimeAgo = (post: Post): Post => {
   // Check if post is valid
   if (!post) return post;
-  
+
   return {
     ...post,
     timeAgo: timeAgo(post.timestamp),
-    comments: Array.isArray(post.comments) 
+    comments: Array.isArray(post.comments)
       ? post.comments.map(comment => ({
-          ...comment,
-          timeAgo: timeAgo(comment.timestamp),
-          replies: Array.isArray(comment.replies) 
-            ? comment.replies.map(reply => ({
-                ...reply,
-                timeAgo: timeAgo(reply.timestamp),
-              })) 
-            : []
-        })) 
+        ...comment,
+        timeAgo: timeAgo(comment.timestamp),
+        replies: Array.isArray(comment.replies)
+          ? comment.replies.map(reply => ({
+            ...reply,
+            timeAgo: timeAgo(reply.timestamp),
+          }))
+          : []
+      }))
       : []
   };
 };
@@ -113,10 +129,12 @@ const initialState: PostState = {
 
 export const fetchPosts = createAsyncThunk(
   'post/fetchPosts',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch, getState }) => {
     try {
-      // console.log('Fetching posts from API');
+      const state = getState() as RootState;
+      const currentUser = state.user.user;
       
+      // Get all posts
       const response = await fetch(`${conf.apiUrl}/posts`, {
         method: 'GET',
         headers: {
@@ -130,18 +148,29 @@ export const fetchPosts = createAsyncThunk(
       }
 
       const responseData = await response.json();
-      // console.log('Posts fetched:', responseData);
-      
+
       if (!responseData.data) {
         console.error('Invalid response format:', responseData);
-        return []; // Return empty array instead of throwing error
+        return []; 
       }
-      
-      const posts = responseData.data;
-      console.log(`Fetched ${posts.length} posts`);
 
-      // Make sure posts is an array before mapping
-      return Array.isArray(posts) 
+      const posts = responseData.data;
+      
+      // If user is logged in, check which posts they've liked
+      if (currentUser && currentUser.id) {
+        for (const post of posts) {
+          // If post already has isLikedByCurrentUser flag, sync it to Redux store
+          if (post.isLikedByCurrentUser !== undefined) {
+            dispatch(setReaction({
+              type: 'post',
+              id: post.id,
+              hasReacted: post.isLikedByCurrentUser
+            }));
+          }
+        }
+      }
+
+      return Array.isArray(posts)
         ? posts.map((post: Post) => updatePostTimeAgo(post))
         : [];
     } catch (error: any) {
@@ -153,8 +182,11 @@ export const fetchPosts = createAsyncThunk(
 
 export const fetchPostById = createAsyncThunk(
   'post/fetchPostById',
-  async (postId: number, { rejectWithValue }) => {
+  async (postId: number, { rejectWithValue, dispatch, getState }) => {
     try {
+      const state = getState() as RootState;
+      const currentUser = state.user.user;
+      
       const response = await fetch(`${conf.apiUrl}/posts/${postId}/full`, {
         method: 'GET',
         headers: {
@@ -169,6 +201,15 @@ export const fetchPostById = createAsyncThunk(
 
       const responseData = await response.json();
       const post = responseData.data;
+
+      // If user is logged in and post has isLikedByCurrentUser flag, sync it to Redux
+      if (currentUser && currentUser.id && post && post.isLikedByCurrentUser !== undefined) {
+        dispatch(setReaction({
+          type: 'post',
+          id: post.id,
+          hasReacted: post.isLikedByCurrentUser
+        }));
+      }
 
       return updatePostTimeAgo(post);
     } catch (error: any) {
@@ -200,7 +241,7 @@ export const createPost = createAsyncThunk(
 
       const post = await postResponse.json();
       const postId = post.data.id;
-      
+
       // If there are media items, create them
       if (postData.mediaItems && postData.mediaItems.length > 0) {
         for (const mediaItem of postData.mediaItems) {
@@ -216,7 +257,7 @@ export const createPost = createAsyncThunk(
               url: mediaItem.url
             })
           });
-          
+
           if (!mediaResponse.ok) {
             console.error('Failed to add media item');
           }
@@ -260,7 +301,7 @@ export const createPost = createAsyncThunk(
         text: postData.text,
         timestamp: Math.floor(Date.now() / 1000),
         timeAgo: 'Just now',
-        likes: 0,
+        likes: [],
         comments: [],
         mediaItems: postData.mediaItems || [],
         user: userObject
@@ -340,60 +381,98 @@ export const deletePost = createAsyncThunk(
   }
 );
 
-export const likePost = createAsyncThunk(
+export const likePost = createAsyncThunk<LikeActionPayload, number>(
   'post/likePost',
-  async (postId: number, { rejectWithValue }) => {
+  async (postId, { rejectWithValue, getState, dispatch }) => {
+    const state = getState() as RootState;
+    const user = state.user.user;
+    const post = state.post.posts.find(p => p.id === postId);
+    
+    if (!user) return rejectWithValue('User not logged in') as any;
+    
+    if (post?.isLikedByCurrentUser) {
+      const result = await dispatch(unlikePost(postId));
+      return result.payload as LikeActionPayload;
+    }
+    
     try {
       const response = await fetch(`${conf.apiUrl}/posts/${postId}/like`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ user_id: user.id })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to like post');
+        if (response.status === 400) {
+          return { postId, isLiked: true };
+        }
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || "Failed to like post") as any;
       }
 
-      // Return the post ID and updated post data
-      return { postId };
+      // Update user reactions in Redux
+      dispatch(setReaction({
+        type: 'post',
+        id: postId,
+        hasReacted: true
+      }));
+
+      return { postId, isLiked: true };
     } catch (error: any) {
       console.error(`Error liking post ${postId}:`, error);
-      return rejectWithValue(error.message || 'Failed to like post');
+      return rejectWithValue(error.message || 'Failed to like post') as any;
     }
   }
 );
 
-export const unlikePost = createAsyncThunk(
+export const unlikePost = createAsyncThunk<LikeActionPayload, number>(
   'post/unlikePost',
-  async (postId: number, { rejectWithValue }) => {
+  async (postId, { rejectWithValue, getState, dispatch }) => {
+    const state = getState() as RootState;
+    const user = state.user.user;
+    
+    if (!user) return rejectWithValue('User not logged in') as any;
+    
     try {
       const response = await fetch(`${conf.apiUrl}/posts/${postId}/like`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        body: JSON.stringify({ user_id: user.id })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to unlike post');
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || "Failed to unlike post") as any;
       }
 
-      // Return the post ID
-      return { postId };
+      // Update user reactions in Redux
+      dispatch(setReaction({
+        type: 'post',
+        id: postId,
+        hasReacted: false
+      }));
+
+      return { postId, isLiked: false };
     } catch (error: any) {
       console.error(`Error unliking post ${postId}:`, error);
-      return rejectWithValue(error.message || 'Failed to unlike post');
+      return rejectWithValue(error.message || 'Failed to unlike post') as any;
     }
   }
 );
 
 export const addComment = createAsyncThunk(
   'post/addComment',
-  async (commentData: { postId: number, text: string }, { rejectWithValue }) => {
+  async (commentData: { postId: number, text: string }, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as RootState;
+      const user = state.user.user;
+      
+      if (!user?.id) {
+        return rejectWithValue('User not authenticated');
+      }
+      
       const response = await fetch(`${conf.apiUrl}/comments`, {
         method: 'POST',
         headers: {
@@ -402,16 +481,16 @@ export const addComment = createAsyncThunk(
         credentials: 'include',
         body: JSON.stringify({
           post_id: commentData.postId,
-          text: commentData.text
+          text: commentData.text,
+          user_id: user.id  // Include user_id in the request
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add comment');
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to add comment');
       }
 
-      const responseData = await response.json();
-      
       // Fetch updated post with new comment
       const postResponse = await fetch(`${conf.apiUrl}/posts/${commentData.postId}/full`, {
         method: 'GET',
@@ -439,8 +518,15 @@ export const addComment = createAsyncThunk(
 
 export const addReply = createAsyncThunk(
   'post/addReply',
-  async (replyData: { postId: number, commentId: number, text: string }, { rejectWithValue }) => {
+  async (replyData: { postId: number, commentId: number, text: string }, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as RootState;
+      const user = state.user.user;
+      
+      if (!user?.id) {
+        return rejectWithValue('User not authenticated');
+      }
+      
       const response = await fetch(`${conf.apiUrl}/replies`, {
         method: 'POST',
         headers: {
@@ -449,16 +535,16 @@ export const addReply = createAsyncThunk(
         credentials: 'include',
         body: JSON.stringify({
           comment_id: replyData.commentId,
-          text: replyData.text
+          text: replyData.text,
+          user_id: user.id  // Include user_id in the request
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to add reply');
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to add reply');
       }
 
-      const responseData = await response.json();
-      
       // Fetch updated post with new reply
       const postResponse = await fetch(`${conf.apiUrl}/posts/${replyData.postId}/full`, {
         method: 'GET',
@@ -484,20 +570,32 @@ export const addReply = createAsyncThunk(
   }
 );
 
+
 export const likeComment = createAsyncThunk(
   'post/likeComment',
-  async (data: { postId: number, commentId: number }, { rejectWithValue }) => {
+  async (data: { postId: number, commentId: number }, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as RootState;
+      const user = state.user.user;
+      
+      if (!user?.id) {
+        return rejectWithValue('User not authenticated');
+      }
+      
       const response = await fetch(`${conf.apiUrl}/comments/${data.commentId}/like`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({
+          user_id: user.id
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to like comment');
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to like comment');
       }
 
       // Fetch updated post with liked comment
@@ -514,9 +612,13 @@ export const likeComment = createAsyncThunk(
       }
 
       const postData = await postResponse.json();
+      
+      // Also update user's reaction in the state
       return {
         postId: data.postId,
-        post: updatePostTimeAgo(postData.data)
+        post: updatePostTimeAgo(postData.data),
+        commentId: data.commentId,
+        isLiked: true
       };
     } catch (error: any) {
       console.error(`Error liking comment ${data.commentId}:`, error);
@@ -527,18 +629,29 @@ export const likeComment = createAsyncThunk(
 
 export const unlikeComment = createAsyncThunk(
   'post/unlikeComment',
-  async (data: { postId: number, commentId: number }, { rejectWithValue }) => {
+  async (data: { postId: number, commentId: number }, { rejectWithValue, getState }) => {
     try {
+      const state = getState() as RootState;
+      const user = state.user.user;
+      
+      if (!user?.id) {
+        return rejectWithValue('User not authenticated');
+      }
+      
       const response = await fetch(`${conf.apiUrl}/comments/${data.commentId}/like`, {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        body: JSON.stringify({
+          user_id: user.id
+        })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to unlike comment');
+        const errorData = await response.json();
+        return rejectWithValue(errorData.message || 'Failed to unlike comment');
       }
 
       // Fetch updated post with unliked comment
@@ -555,9 +668,13 @@ export const unlikeComment = createAsyncThunk(
       }
 
       const postData = await postResponse.json();
+      
+      // Also update user's reaction in the state
       return {
         postId: data.postId,
-        post: updatePostTimeAgo(postData.data)
+        post: updatePostTimeAgo(postData.data),
+        commentId: data.commentId,
+        isLiked: false
       };
     } catch (error: any) {
       console.error(`Error unliking comment ${data.commentId}:`, error);
@@ -656,10 +773,22 @@ const postSlice = createSlice({
       if (state.posts.length > 0) {
         state.posts = state.posts.map(post => updatePostTimeAgo(post));
       }
+    },
+    syncPostLikes: (state, action: PayloadAction<{postId: number, isLiked: boolean}>) => {
+      const { postId, isLiked } = action.payload;
+      const post = state.posts.find(p => p.id === postId);
+      if (post) {
+        post.isLikedByCurrentUser = isLiked;
+      }
     }
   },
   extraReducers: (builder) => {
     builder
+      .addCase(clearPostState, (state) => {
+        state.posts = [];
+        state.loading = false;
+        state.error = null;
+      })
       // Fetch posts
       .addCase(fetchPosts.pending, (state) => {
         state.loading = true;
@@ -673,7 +802,7 @@ const postSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Fetch post by ID
       .addCase(fetchPostById.pending, (state) => {
         state.loading = true;
@@ -692,7 +821,7 @@ const postSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Create post
       .addCase(createPost.pending, (state) => {
         state.loading = true;
@@ -706,7 +835,7 @@ const postSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Update post
       .addCase(updatePost.pending, (state) => {
         state.loading = true;
@@ -723,7 +852,7 @@ const postSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
+
       // Delete post
       .addCase(deletePost.pending, (state) => {
         state.loading = true;
@@ -737,19 +866,31 @@ const postSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      
-      // Like/unlike post
-      .addCase(likePost.fulfilled, (state, action) => {
-        // We'll refresh the whole post after liking via fetchPostById
-        const postId = action.payload.postId;
-        // Note: Full post update would happen by dispatching fetchPostById after this
+
+      .addCase(likePost.fulfilled, (state, action: PayloadAction<LikeActionPayload>) => {
+        const { postId, isLiked } = action.payload;
+        const postIndex = state.posts.findIndex(p => p.id === postId);
+        
+        if (postIndex !== -1) {
+          // Update like status
+          state.posts[postIndex].isLikedByCurrentUser = isLiked;
+          // Increment likes count if needed
+          if (isLiked) state.posts[postIndex].likes.length += 1;
+        }
       })
-      .addCase(unlikePost.fulfilled, (state, action) => {
-        // Same approach as likePost
-        const postId = action.payload.postId;
-        // Note: Full post update would happen by dispatching fetchPostById after this
+      .addCase(unlikePost.fulfilled, (state, action: PayloadAction<LikeActionPayload>) => {
+        const { postId, isLiked } = action.payload;
+        const postIndex = state.posts.findIndex(p => p.id === postId);
+        
+        if (postIndex !== -1) {
+          // Update like status
+          state.posts[postIndex].isLikedByCurrentUser = isLiked;
+          // Decrement likes count if needed
+          if (!isLiked && state.posts[postIndex].likes.length > 0) 
+            state.posts[postIndex].likes.length -= 1;
+        }
       })
-      
+
       // Add comment
       .addCase(addComment.fulfilled, (state, action) => {
         const { postId, post } = action.payload;
@@ -758,7 +899,7 @@ const postSlice = createSlice({
           state.posts[postIndex] = post;
         }
       })
-      
+
       // Add reply
       .addCase(addReply.fulfilled, (state, action) => {
         const { postId, post } = action.payload;
@@ -767,7 +908,7 @@ const postSlice = createSlice({
           state.posts[postIndex] = post;
         }
       })
-      
+
       // Like/unlike comment
       .addCase(likeComment.fulfilled, (state, action) => {
         const { postId, post } = action.payload;
@@ -783,7 +924,7 @@ const postSlice = createSlice({
           state.posts[postIndex] = post;
         }
       })
-      
+
       // Like/unlike reply
       .addCase(likeReply.fulfilled, (state, action) => {
         const { postId, post } = action.payload;
@@ -803,15 +944,15 @@ const postSlice = createSlice({
 });
 
 // Export actions
-export const { 
-  updateTimeAgo
+export const {
+  updateTimeAgo, syncPostLikes
 } = postSlice.actions;
 
 // Export selectors
 export const selectAllPosts = (state: RootState) => state.post.posts;
-export const selectPostById = (state: RootState, postId: number) => 
+export const selectPostById = (state: RootState, postId: number) =>
   state.post.posts.find(post => post.id === postId);
 export const selectPostsLoading = (state: RootState) => state.post.loading;
 export const selectPostsError = (state: RootState) => state.post.error;
-
+export const clearPostState = createAction('post/clearPostState');
 export default postSlice.reducer;

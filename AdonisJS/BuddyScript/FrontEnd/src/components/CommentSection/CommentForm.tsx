@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addComment } from '../../store/slices/postSlice';
 import { selectUser } from '../../store/slices/userSlice';
+import { AppDispatch } from '../../store';
 
 interface CommentFormProps {
   postId: number;
@@ -9,28 +10,19 @@ interface CommentFormProps {
 
 const CommentForm: React.FC<CommentFormProps> = ({ postId }) => {
   const [commentText, setCommentText] = useState<string>('');
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (commentText.trim()) {
-      const timestamp = Date.now();
-      // Use displayName if available, or use a fallback name instead of email
-      const displayName = user?.displayName || user?.name || 'Anonymous User';
+    if (commentText.trim() && user?.id) {
+      // Send the actual comment to the server via Redux action
+      dispatch(addComment({ 
+        postId, 
+        text: commentText 
+      }));
       
-      const newComment = {
-        id: timestamp,
-        text: commentText,
-        username: displayName,
-        userId: user?.id || 'anonymous', // Store user ID for profile linking
-        timestamp,
-        timeAgo: 'Just now',
-        likes: 0,
-        replies: []
-      };
-      
-      dispatch(addComment({ postId, comment: newComment }));
+      // Clear the input field
       setCommentText('');
     }
   };

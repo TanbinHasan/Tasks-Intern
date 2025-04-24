@@ -29,17 +29,35 @@ export default class PostsController {
     }
   }
 
-  public async getPostWithRelations({ request, response, params }: HttpContext) {
+  public async getPostWithRelations({ request, response, params, auth }: HttpContext) {
     const { id } = await request.validateUsing(postsValidator.getPostById, {
       data: {id: Number(params.id)}
     })
 
     try {
       const post = await this.postsService.getPostWithRelations(id);
+      
+      // Check if the current user has liked this post
+      let hasLiked = false;
+      try {
+        // Try to get the authenticated user
+        const user = await auth.authenticate();
+        // If authenticated, check if user has liked the post
+        const like = await this.postsService.checkUserLiked(id, user.id);
+        hasLiked = !!like;
+      } catch (authError) {
+        // If not authenticated, don't modify hasLiked
+      }
+      
+      // Add the hasLiked property to the post
+      const result = {
+        ...post.toJSON(),
+        isLikedByCurrentUser: hasLiked
+      };
 
       return response.json({
         status: 'success',
-        data: post
+        data: result
       })
     } catch (error: any) {
       return response.status(error.status || 500).json({
@@ -49,7 +67,7 @@ export default class PostsController {
     }
   }
 
-  public async getAllPosts({ request, response }: HttpContext) {
+  public async getAllPosts({ request, response, auth }: HttpContext) {
     await request.validateUsing(postsValidator.getAllPosts, {
       data: {}
     })
@@ -57,17 +75,41 @@ export default class PostsController {
     try {
       const posts = await this.postsService.getAllPosts();
       
+      // Check if posts are liked by the current user
+      let currentUserId = null;
+      try {
+        // Try to get the authenticated user
+        const user = await auth.authenticate();
+        currentUserId = user.id;
+      } catch (authError) {
+        // If not authenticated, don't modify likes
+      }
+      
+      // If user is authenticated, check each post
+      const postsWithLikes = await Promise.all(posts.map(async (post) => {
+        const postJSON = post.toJSON();
+        
+        if (currentUserId) {
+          // Check if user has liked this post
+          const like = await this.postsService.checkUserLiked(post.id, currentUserId);
+          postJSON.isLikedByCurrentUser = !!like;
+        }
+        
+        return postJSON;
+      }));
+      
       // Debug log to check if posts have media items
-      console.log(`Returning ${posts.length} posts with media items:`, 
-        posts.map(p => ({
+      console.log(`Returning ${postsWithLikes.length} posts with media items:`, 
+        postsWithLikes.map(p => ({
           id: p.id, 
-          mediaCount: p.mediaItems ? p.mediaItems.length : 0
+          mediaCount: p.mediaItems ? p.mediaItems.length : 0,
+          isLikedByCurrentUser: p.isLikedByCurrentUser
         }))
       );
   
       return response.json({
         status: 'success',
-        data: posts
+        data: postsWithLikes
       })
     } catch (error: any) {
       return response.status(error.status || 500).json({
@@ -320,6 +362,46 @@ export default class PostsController {
         status: 'success',
         message: 'Post unliked successfully'
       })
+    } catch (error: any) {
+      return response.status(error.status || 500).json({
+        status: 'error',
+        message: error.message
+      })
+    }
+  }
+  
+  // Add a new endpoint to check if a user has liked a post
+  public async checkUserLiked({ request, response, params, auth }: HttpContext) {
+    const { id } = await request.validateUsing(postsValidator.getPostById, {
+      data: {id: Number(params.id)}
+    })
+    
+    try {
+      // Try to get the authenticated user
+      let userId;
+      try {
+        const user = await auth.authenticate();
+        userId = user.id;
+      } catch (authError) {
+        // If authentication fails, check if user_id was provided in request
+        userId = request.input('user_id');
+        
+        if (!userId) {
+          return response.status(401).json({
+            status: 'error',
+            message: 'Authentication required to check like status'
+          });
+        }
+      }
+      
+      const like = await this.postsService.checkUserLiked(id, userId);
+      
+      return response.json({
+        status: 'success',
+        data: {
+          liked: !!like
+        }
+      });
     } catch (error: any) {
       return response.status(error.status || 500).json({
         status: 'error',

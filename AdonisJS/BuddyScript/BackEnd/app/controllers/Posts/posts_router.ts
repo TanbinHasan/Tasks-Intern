@@ -10,6 +10,9 @@ router.group(() => {
   router.get('/posts/:id/media', [PostsController, 'getPostMediaItems'])
   router.get('/posts/:id/likes', [PostsController, 'getPostLikes'])
   
+  // Add a new route to check if a user has liked a post
+  router.get('/posts/:id/like', [PostsController, 'checkUserLiked'])
+  
   router.post('/posts', [PostsController, 'createPost'])
   router.put('/posts/:id', [PostsController, 'updatePost'])
   router.delete('/posts/:id', [PostsController, 'deletePost'])

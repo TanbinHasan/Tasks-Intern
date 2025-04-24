@@ -175,4 +175,9 @@ export default class PostsService {
     const deleted = await this.postsQuery.deletePostLike(id, userId);
     return deleted;
   }
+  
+  // Add a new method to check if a user has liked a post
+  public async checkUserLiked(postId: number, userId: number) {
+    return this.postsQuery.findPostLikeByUser(postId, userId);
+  }
 }

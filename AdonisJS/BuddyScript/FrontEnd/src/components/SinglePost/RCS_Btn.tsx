@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { likePost, Post } from '../../store/slices/postSlice';
-import { selectUser, setReaction } from '../../store/slices/userSlice';
+import { likePost, unlikePost, Post } from '../../store/slices/postSlice';
+import { selectUser, setReaction, selectHasReacted } from '../../store/slices/userSlice';
 import CommentForm from '../CommentSection/CommentForm';
-import { AppDispatch } from '../../store';
+import { AppDispatch, RootState } from '../../store';
 
 interface RCS_BtnProps {
   post: Post;
@@ -15,34 +15,48 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
   const [showComments, setShowComments] = useState<boolean>(false);
   const [shared, setShared] = useState<boolean>(false);
   
-  // Check if post is liked directly from the post's likedBy array
-  const isLiked = user && post.likedBy ? post.likedBy.includes(user.email || '') : false;
-
-  // Keep UserContext in sync with post data on component mount
+  // Add state for local like count to ensure it's displayed correctly
+  const [localLikeCount, setLocalLikeCount] = useState<number>(post.likes.length || 0);
+  
+  // Get like status from Redux
+  const hasReacted = useSelector((state: RootState) => 
+    selectHasReacted(state, 'post', post.id)
+  );
+  
+  // Update local like count when post changes
   useEffect(() => {
-    if (user && user.email && post.likedBy) {
-      const userHasLiked = post.likedBy.includes(user.email);
-      // Sync the Redux reaction state with post data
+    setLocalLikeCount(post.likes.length || 0);
+  }, [post.likes]);
+  
+  // When component mounts, check if post has isLikedByCurrentUser flag and sync to Redux
+  useEffect(() => {
+    if (user && user.id && post.isLikedByCurrentUser !== undefined) {
       dispatch(setReaction({
         type: 'post',
         id: post.id,
-        hasReacted: userHasLiked
+        hasReacted: post.isLikedByCurrentUser
       }));
     }
-  }, [user, post.id, post.likedBy, dispatch]);
+  }, [user, post.id, post.isLikedByCurrentUser, dispatch]);
 
-  const handleLikeClick = () => {
-    if (!user) return; // Prevent action if not logged in
+  const handleLikeClick = async () => {
+    if (!user) return;
     
-    // Toggle the like status in Redux
-    dispatch(likePost({ id: post.id, userEmail: user.email || '' }));
-    
-    // Update the user's reaction status in Redux
-    dispatch(setReaction({
-      type: 'post',
-      id: post.id,
-      hasReacted: !isLiked
-    }));
+    try {
+      if (hasReacted) {
+        // Optimistic update UI immediately
+        setLocalLikeCount(prev => Math.max(0, prev - 1));
+        await dispatch(unlikePost(post.id)).unwrap();
+      } else {
+        // Optimistic update UI immediately
+        setLocalLikeCount(prev => prev + 1);
+        await dispatch(likePost(post.id)).unwrap();
+      }
+    } catch (error) {
+      console.error('Error handling like:', error);
+      // Revert optimistic update on error
+      setLocalLikeCount(post.likes.length || 0);
+    }
   };
 
   const handleCommentClick = () => {
@@ -54,10 +68,14 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
     alert('Post shared!');
   };
 
+  // Debug info - remove in production
+  // console.log(`Post ${post.id}: likes=${localLikeCount}, isLiked=${hasReacted}, userId=${user?.id}`);
+  // console.log(post.likes);
+
   return (
     <>
       {/* Like count display */}
-      {post.likes > 0 && (
+      {localLikeCount > 0 && (
         <div className="_feed_inner_timeline_like_count" style={{
           padding: '6px 12px',
           fontSize: '13px',
@@ -79,7 +97,7 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
               <path d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-6.5" />
             </svg>
           </div>
-          <span>{post.likes}</span>
+          <span>{localLikeCount}</span>
         </div>
       )}
 
@@ -93,7 +111,7 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
       }}>
         {/* Like Button */}
         <button
-          className={`_feed_reaction ${isLiked ? '_feed_reaction_active' : ''}`}
+          className={`_feed_reaction ${hasReacted ? '_feed_reaction_active' : ''}`}
           onClick={handleLikeClick}
           style={{
             background: 'transparent',
@@ -104,8 +122,8 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontWeight: isLiked ? '600' : 'normal',
-            color: isLiked ? '#1877f2' : '#65676b',
+            fontWeight: hasReacted ? '600' : 'normal',
+            color: hasReacted ? '#1877f2' : '#65676b',
             transition: 'all 0.2s ease',
             flex: '1',
             fontSize: '14px'
@@ -118,9 +136,9 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
               xmlns="http://www.w3.org/2000/svg"
               width={18}
               height={18}
-              fill={isLiked ? '#1877f2' : 'none'}
+              fill={hasReacted ? '#1877f2' : 'none'}
               viewBox="0 0 24 24"
-              stroke={isLiked ? '#1877f2' : '#65676b'}
+              stroke={hasReacted ? '#1877f2' : '#65676b'}
             >
               <path
                 strokeLinecap="round"

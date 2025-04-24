@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { selectPostById } from '../../store/slices/postSlice';
 import PreviousComments from './PreviousComments';
 import Comment from './Comment';
+import CommentForm from './CommentForm';
 import { RootState } from '../../store';
 
 interface CommentSectionProps {
@@ -12,14 +13,19 @@ interface CommentSectionProps {
 const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
   const post = useSelector((state: RootState) => selectPostById(state, postId));
   const [showAllComments, setShowAllComments] = useState<boolean>(false);
-  const comments = post ? post.comments : [];
+  
+  // Get comments from post data
+  const comments = post?.comments || [];
 
+  // Handle view toggle for comments
   const handleViewPreviousComments = () => {
     setShowAllComments(prevState => !prevState);
   };
 
-  // Define which comments to show
-  const visibleComments = showAllComments ? comments : comments.slice(-2);
+  // Define which comments to show (either all or just the most recent 2)
+  const visibleComments = showAllComments 
+    ? comments 
+    : (comments.length > 2 ? comments.slice(-2) : comments);
 
   return (
     <div className="_comments_container" style={{
@@ -50,13 +56,12 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
       )}
 
       <div className="_timline_comment_main" style={{
-        padding: '8px 0',
         width: '100%',
         boxSizing: 'border-box',
       }}>
         {/* Show "Previous comments" button at the top when there are more than 2 comments */}
         {!showAllComments && comments.length > 2 && (
-          <div style={{ padding: '0 16px 8px' }}>
+          <div style={{ padding: '8px 16px 0' }}>
             <PreviousComments 
               count={comments.length - 2} 
               onClick={handleViewPreviousComments} 
@@ -66,18 +71,27 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         
         {/* Display comments */}
         <div>
-          {visibleComments.map((comment) => (
-            <Comment
-              key={comment.id}
-              postId={postId}
-              commentId={comment.id}
-              username={comment.username}
-              content={comment.text}
-              reactionCount={comment.likes}
-              timeAgo={comment.timeAgo}
-              replies={comment.replies || []}
-            />
-          ))}
+          {visibleComments.map((comment) => {
+            // Determine username from different possible formats
+            const username = comment.username || 
+                            (comment.user ? comment.user.name : 'Anonymous');
+                            
+            // Determine likes count - it could be a number or an array of like objects
+            const likesCount = Array.isArray(comment.likes) ? comment.likes.length : comment.likes;
+            
+            return (
+              <Comment
+                key={comment.id}
+                postId={postId}
+                commentId={comment.id}
+                username={username}
+                content={comment.text}
+                reactionCount={likesCount}
+                timeAgo={comment.timeAgo}
+                replies={comment.replies || []}
+              />
+            );
+          })}
         </div>
         
         {/* Show hide comments button if showing all */}
@@ -101,7 +115,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         )}
         
         {/* Comment form */}
-        {/* <CommentForm postId={postId} /> */}
+        <CommentForm postId={postId} />
       </div>
     </div>
   );
