@@ -352,7 +352,7 @@ const PostContent: React.FC<PostContentProps> = ({ post }) => {
               onChange={(e) => setEditText(e.target.value)}
               rows={3}
             />
-            <label className="_feed_textarea_label">Write something...</label>
+            {/* <label className="_feed_textarea_label">Write something...</label> */}
           </div>
         </div>
 
