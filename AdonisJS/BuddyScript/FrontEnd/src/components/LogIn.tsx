@@ -8,7 +8,9 @@ const LogIn: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
-  const [error, setError] = useState<string>('');
+  const [emailError, setEmailError] = useState<string>('');
+  const [passwordError, setPasswordError] = useState<string>('');
+  const [generalError, setGeneralError] = useState<string>('');
   const [rememberMe, setRememberMe] = useState<boolean>(false);
   const isLoading = useSelector(selectUserLoading);
   const loginError = useSelector(selectUserError);
@@ -32,21 +34,45 @@ const LogIn: React.FC = () => {
   useEffect(() => {
     // Update local error state when redux state changes
     if (loginError) {
-      setError(loginError);
+      setGeneralError(loginError);
     }
   }, [loginError]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
+  const validateEmail = (email: string): boolean => {
     if (!email.trim()) {
-      setError('Email is required');
-      return;
+      setEmailError('Email is required');
+      return false;
     }
     
+    if (!email.includes('@')) {
+      setEmailError(`Please include an '@' in the email address. '${email}' is missing an '@'.`);
+      return false;
+    }
+    
+    setEmailError('');
+    return true;
+  };
+
+  const validatePassword = (password: string): boolean => {
     if (!password.trim()) {
-      setError('Password is required');
+      setPasswordError('Password is required');
+      return false;
+    }
+    
+    setPasswordError('');
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setGeneralError('');
+    setEmailError('');
+    setPasswordError('');
+
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
@@ -60,7 +86,7 @@ const LogIn: React.FC = () => {
       }
       navigate('/feed');
     } catch (err) {
-      setError(err as string || 'Login failed');
+      setGeneralError(err as string || 'Login failed');
     }
   };
 
@@ -70,6 +96,16 @@ const LogIn: React.FC = () => {
 
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRememberMe(e.target.checked);
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setEmail(e.target.value);
+    if (emailError) validateEmail(e.target.value);
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPassword(e.target.value);
+    if (passwordError) validatePassword(e.target.value);
   };
 
   return (
@@ -110,31 +146,53 @@ const LogIn: React.FC = () => {
                   <div className="_social_login_content_bottom_txt _mar_b40">
                     <span>Or</span>
                   </div>
-                  {error && <p style={{ color: 'red' }}>{error}</p>} {/* Display error message */}
+                  {generalError && <div className="alert alert-danger" role="alert">{generalError}</div>}
                   <form className="_social_login_form" onSubmit={handleSubmit}>
                     <div className="row">
                       <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                         <div className="_social_login_form_input _mar_b14">
-                          <label className="_social_login_label _mar_b8" htmlFor="email">Email</label>
-                          <input
-                            id="email"
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="form-control _social_login_input"
-                          />
+                          <div className="d-flex justify-content-between align-items-center">
+                            <label className="_social_login_label _mar_b8" htmlFor="email">Email</label>
+                            {emailError && <span className="text-danger small">{emailError}</span>}
+                          </div>
+                          <div className="position-relative">
+                            <input
+                              id="email"
+                              type="text"
+                              value={email}
+                              onChange={handleEmailChange}
+                              onBlur={() => validateEmail(email)}
+                              className={`form-control _social_login_input ${emailError ? 'is-invalid' : ''}`}
+                            />
+                            {emailError && (
+                              <div className="invalid-tooltip" style={{ display: 'block', position: 'absolute', top: '100%', zIndex: 5 }}>
+                                {emailError}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                       <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                         <div className="_social_login_form_input _mar_b14">
-                          <label className="_social_login_label _mar_b8" htmlFor="password">Password</label>
-                          <input
-                            id="password"
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="form-control _social_login_input"
-                          />
+                          <div className="d-flex justify-content-between align-items-center">
+                            <label className="_social_login_label _mar_b8" htmlFor="password">Password</label>
+                            {passwordError && <span className="text-danger small">{passwordError}</span>}
+                          </div>
+                          <div className="position-relative">
+                            <input
+                              id="password"
+                              type="password"
+                              value={password}
+                              onChange={handlePasswordChange}
+                              onBlur={() => validatePassword(password)}
+                              className={`form-control _social_login_input ${passwordError ? 'is-invalid' : ''}`}
+                            />
+                            {passwordError && (
+                              <div className="invalid-tooltip" style={{ display: 'block', position: 'absolute', top: '100%', zIndex: 5 }}>
+                                {passwordError}
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -160,7 +218,13 @@ const LogIn: React.FC = () => {
                     <div className="row">
                       <div className="col-lg-12 col-md-12 col-xl-12 col-sm-12">
                         <div className="_social_login_form_btn _mar_t40 _mar_b60">
-                          <button type="submit" className="_social_login_form_btn_link _btn1">Login now</button>
+                          <button 
+                            type="submit" 
+                            className="_social_login_form_btn_link _btn1"
+                            disabled={isLoading}
+                          >
+                            {isLoading ? 'Logging in...' : 'Login now'}
+                          </button>
                         </div>
                       </div>
                     </div>
