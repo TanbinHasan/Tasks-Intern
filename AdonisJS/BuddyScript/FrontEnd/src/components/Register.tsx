@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import conf from "../conf/conf";
+import Swal from "sweetalert2";
 
 // Password criteria interface
 interface PasswordCriteria {
@@ -25,6 +26,7 @@ const Register: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
+  const [emailError, setEmailError] = useState<string>("");
   const [error, setError] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [passwordCriteria, setPasswordCriteria] = useState<PasswordCriteria>({
@@ -135,6 +137,19 @@ const Register: React.FC = () => {
         body: JSON.stringify(payload)
       });
       
+      if (!response.ok) {
+        const errorData = await response.json();
+        
+        // Check for email already exists error
+        if (errorData.message && errorData.message.toLowerCase().includes("email") && 
+            errorData.message.toLowerCase().includes("exist")) {
+          setEmailError("Email already exists. Please use a different email address.");
+          throw new Error(errorData.message);
+        }
+        
+        throw new Error(errorData.message || "Registration failed");
+      }
+      
       return response.json();
     } catch (error) {
       console.error("Registration error:", error);
@@ -154,6 +169,11 @@ const Register: React.FC = () => {
         credentials: "include",
         body: JSON.stringify(payload)
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Login failed");
+      }
       
       return response.json();
     } catch (error) {
@@ -176,7 +196,15 @@ const Register: React.FC = () => {
     const validationError = validateForm();
     if (validationError) {
       setError(validationError);
-      alert(validationError);
+      
+      // Show validation error with SweetAlert
+      Swal.fire({
+        title: 'Validation Error',
+        text: validationError,
+        icon: 'warning',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#f8bb86'
+      });
       return;
     }
 
@@ -187,15 +215,47 @@ const Register: React.FC = () => {
 
       try {
         await loginAfterRegistration(email, password);
-        alert("Registration successful!");
-        navigate("/");
+        
+        // Show success message with SweetAlert
+        Swal.fire({
+          title: 'Registration Successful',
+          text: 'Welcome to our platform!',
+          icon: 'success',
+          timer: 2000,
+          showConfirmButton: false
+        }).then(() => {
+          navigate("/feed");
+        });
       } catch(loginError) {
-        alert("Registration successful! Please try to log in again");
-        navigate("/");
+        // Show login error but successful registration
+        Swal.fire({
+          title: 'Registration Successful',
+          text: 'Your account has been created, but we couldn\'t log you in automatically. Please log in manually.',
+          icon: 'success',
+          confirmButtonText: 'Go to Login',
+          confirmButtonColor: '#28a745'
+        }).then(() => {
+          navigate("/");
+        });
       } 
-    }  catch (registerError: any) {
+    } catch (registerError: any) {
       // Registration failed
-      setError(registerError.message || "Registration failed. Please try again.");
+      if (emailError) {
+        // Email already exists error is displayed inline - don't show SweetAlert
+        // We just set the loading state to false and let the inline error show
+      } else {
+        // For other errors, show SweetAlert
+        const errorMessage = registerError.message || "Registration failed. Please try again.";
+        setError(errorMessage);
+        
+        Swal.fire({
+          title: 'Registration Failed',
+          text: errorMessage,
+          icon: 'error',
+          confirmButtonText: 'Try Again',
+          confirmButtonColor: '#d33'
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -217,6 +277,9 @@ const Register: React.FC = () => {
     const value = e.target.value;
     setEmail(value);
     setTouched({ ...touched, email: true });
+    
+    // Clear email-specific error when changing the value
+    setEmailError("");
     setError("");
   };
 
@@ -327,20 +390,7 @@ const Register: React.FC = () => {
                     <span>Or</span>
                   </div>
                   
-                  {/* Error message display with better styling */}
-                  {error && (
-                    <div 
-                      style={{ 
-                        color: "white", 
-                        backgroundColor: "#dc3545", 
-                        padding: "10px", 
-                        borderRadius: "5px",
-                        marginBottom: "15px" 
-                      }}
-                    >
-                      {error}
-                    </div>
-                  )}
+                  {/* Error message display now handled by SweetAlert */}
                   
                   <form className="_social_registration_form" onSubmit={handleSubmit}>
                     <div className="row">
@@ -359,11 +409,19 @@ const Register: React.FC = () => {
                             value={name}
                             onChange={handleNameChange}
                             onBlur={handleNameBlur}
-                            className={`form-control _social_registration_input ${touched.name && !name ? "is-invalid" : ""}`}
+                            className={`form-control _social_registration_input ${touched.name && !name ? "border-warning" : ""}`}
                             required
                           />
                           {touched.name && !name && (
-                            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545" }}>
+                            <div className="text-warning" style={{ 
+                              fontSize: '0.8rem', 
+                              marginTop: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                              </svg>
                               Name is required
                             </div>
                           )}
@@ -384,12 +442,35 @@ const Register: React.FC = () => {
                             value={email}
                             onChange={handleEmailChange}
                             onBlur={handleEmailBlur}
-                            className={`form-control _social_registration_input ${touched.email && !email ? "is-invalid" : ""}`}
+                            className={`form-control _social_registration_input ${
+                              (touched.email && !email) || emailError ? "border-warning" : ""
+                            }`}
                             required
                           />
                           {touched.email && !email && (
-                            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545" }}>
+                            <div className="text-warning" style={{ 
+                              fontSize: '0.8rem', 
+                              marginTop: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                              </svg>
                               Email is required
+                            </div>
+                          )}
+                          {emailError && (
+                            <div className="text-warning" style={{ 
+                              fontSize: '0.8rem', 
+                              marginTop: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                              </svg>
+                              {emailError}
                             </div>
                           )}
                         </div>
@@ -408,61 +489,93 @@ const Register: React.FC = () => {
                             value={password}
                             onChange={handlePasswordChange}
                             onBlur={handlePasswordBlur}
-                            className={`form-control _social_registration_input ${touched.password && !password ? "is-invalid" : ""}`}
+                            className={`form-control _social_registration_input ${touched.password && !password ? "border-warning" : ""}`}
                             required
                           />
                           {touched.password && !password && (
-                            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545" }}>
+                            <div className="text-warning" style={{ 
+                              fontSize: '0.8rem', 
+                              marginTop: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                              </svg>
                               Password is required
                             </div>
                           )}
                         </div>
                       </div>
 
-                      {/* Password criteria section (from second file) */}
+                      {/* Password criteria section - improved styling */}
                       <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                         <div className="password-criteria _mar_b14">
-                          <div className="criteria-item">
-                            <input
-                              type="checkbox"
-                              checked={passwordCriteria.length}
-                              disabled
-                              className="mr-2"
-                            />
-                            <span className={passwordCriteria.length ? "text-success" : "text-danger"}>
+                          <div className="criteria-item d-flex align-items-center mb-1">
+                            <div className={passwordCriteria.length ? "text-success me-2" : "text-warning me-2"}>
+                              {passwordCriteria.length ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-circle" viewBox="0 0 16 16">
+                                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                                </svg>
+                              )}
+                            </div>
+                            <span className={passwordCriteria.length ? "text-success" : "text-warning"}>
                               At least 8 characters long
                             </span>
                           </div>
-                          <div className="criteria-item">
-                            <input
-                              type="checkbox"
-                              checked={passwordCriteria.uppercase}
-                              disabled
-                              className="mr-2"
-                            />
-                            <span className={passwordCriteria.uppercase ? "text-success" : "text-danger"}>
+                          <div className="criteria-item d-flex align-items-center mb-1">
+                            <div className={passwordCriteria.uppercase ? "text-success me-2" : "text-warning me-2"}>
+                              {passwordCriteria.uppercase ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-circle" viewBox="0 0 16 16">
+                                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                                </svg>
+                              )}
+                            </div>
+                            <span className={passwordCriteria.uppercase ? "text-success" : "text-warning"}>
                               At least one uppercase letter
                             </span>
                           </div>
-                          <div className="criteria-item">
-                            <input
-                              type="checkbox"
-                              checked={passwordCriteria.lowercase}
-                              disabled
-                              className="mr-2"
-                            />
-                            <span className={passwordCriteria.lowercase ? "text-success" : "text-danger"}>
+                          <div className="criteria-item d-flex align-items-center mb-1">
+                            <div className={passwordCriteria.lowercase ? "text-success me-2" : "text-warning me-2"}>
+                              {passwordCriteria.lowercase ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-circle" viewBox="0 0 16 16">
+                                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                                </svg>
+                              )}
+                            </div>
+                            <span className={passwordCriteria.lowercase ? "text-success" : "text-warning"}>
                               At least one lowercase letter
                             </span>
                           </div>
-                          <div className="criteria-item">
-                            <input
-                              type="checkbox"
-                              checked={passwordCriteria.number}
-                              disabled
-                              className="mr-2"
-                            />
-                            <span className={passwordCriteria.number ? "text-success" : "text-danger"}>
+                          <div className="criteria-item d-flex align-items-center">
+                            <div className={passwordCriteria.number ? "text-success me-2" : "text-warning me-2"}>
+                              {passwordCriteria.number ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                                  <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                                </svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-circle" viewBox="0 0 16 16">
+                                  <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                  <path d="M7.002 11a1 1 0 1 1 2 0 1 1 0 0 1-2 0zM7.1 4.995a.905.905 0 1 1 1.8 0l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995z"/>
+                                </svg>
+                              )}
+                            </div>
+                            <span className={passwordCriteria.number ? "text-success" : "text-warning"}>
                               At least one number
                             </span>
                           </div>
@@ -483,11 +596,22 @@ const Register: React.FC = () => {
                             value={confirmPassword}
                             onChange={handleConfirmPasswordChange}
                             onBlur={handleConfirmPasswordBlur}
-                            className={`form-control _social_registration_input ${touched.confirmPassword && !confirmPassword ? "is-invalid" : ""}`}
+                            className={`form-control _social_registration_input ${
+                              touched.confirmPassword && (!confirmPassword || (password && confirmPassword && !isPasswordMatched)) 
+                              ? "border-warning" : ""
+                            }`}
                             required
                           />
                           {touched.confirmPassword && !confirmPassword && (
-                            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545" }}>
+                            <div className="text-warning" style={{ 
+                              fontSize: '0.8rem', 
+                              marginTop: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                              </svg>
                               Please confirm your password
                             </div>
                           )}
@@ -496,9 +620,18 @@ const Register: React.FC = () => {
                       
                       {password && confirmPassword && (
                         <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12 _mar_b14">
-                          <p className={isPasswordMatched ? "text-success" : "text-danger"}>
-                            {isPasswordMatched ? "Passwords match." : "Passwords do not match."}
-                          </p>
+                          <div className={isPasswordMatched ? "text-success d-flex align-items-center" : "text-warning d-flex align-items-center"}>
+                            {isPasswordMatched ? (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-check-circle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z"/>
+                              </svg>
+                            ) : (
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                              </svg>
+                            )}
+                            <span>{isPasswordMatched ? "Passwords match." : "Passwords do not match."}</span>
+                          </div>
                         </div>
                       )}
                     </div>
@@ -521,7 +654,15 @@ const Register: React.FC = () => {
                             I agree to terms & conditions
                           </label>
                           {touched.terms && !termsAccepted && (
-                            <div className="invalid-feedback" style={{ display: "block", color: "#dc3545" }}>
+                            <div className="text-warning" style={{ 
+                              fontSize: '0.8rem', 
+                              marginTop: '0.25rem',
+                              display: 'flex',
+                              alignItems: 'center'
+                            }}>
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                              </svg>
                               You must accept the terms and conditions
                             </div>
                           )}
@@ -534,8 +675,16 @@ const Register: React.FC = () => {
                           <button 
                             type="submit" 
                             className="_social_registration_form_btn_link _btn1"
+                            disabled={isLoading}
                           >
-                            Register now
+                            {isLoading ? (
+                              <>
+                                <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                Registering...
+                              </>
+                            ) : (
+                              'Register now'
+                            )}
                           </button>
                         </div>
                       </div>

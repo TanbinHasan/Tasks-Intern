@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { loginUser, selectUserError, selectUserLoading } from '../store/slices/userSlice';
 import { AppDispatch } from '../store';
+import Swal from 'sweetalert2';
 
 const LogIn: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -32,9 +33,17 @@ const LogIn: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Update local error state when redux state changes
+    // Display SweetAlert for login errors instead of inline messages
     if (loginError) {
-      setGeneralError(loginError);
+      console.log('Login error detected:', loginError);
+      Swal.fire({
+        title: 'Login Failed',
+        text: loginError,
+        icon: 'error',
+        confirmButtonText: 'Try Again',
+        confirmButtonColor: '#3085d6'
+      });
+      setGeneralError(''); // Clear general error since we're using swal
     }
   }, [loginError]);
 
@@ -45,7 +54,7 @@ const LogIn: React.FC = () => {
     }
     
     if (!email.includes('@')) {
-      setEmailError(`Please include an '@' in the email address. '${email}' is missing an '@'.`);
+      setEmailError(`Please include an '@' in the email address`);
       return false;
     }
     
@@ -66,8 +75,6 @@ const LogIn: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setGeneralError('');
-    setEmailError('');
-    setPasswordError('');
 
     const isEmailValid = validateEmail(email);
     const isPasswordValid = validatePassword(password);
@@ -77,16 +84,47 @@ const LogIn: React.FC = () => {
     }
 
     try {
-      await dispatch(loginUser({ email, password })).unwrap();
+      const result = await dispatch(loginUser({ email, password }));
+      
+      // Check for rejected status from the action
+      if (result.type.endsWith('/rejected')) {
+        // Display error with SweetAlert
+        Swal.fire({
+          title: 'Authentication Failed',
+          text: result.payload as string || 'Email or password is incorrect',
+          icon: 'error',
+          confirmButtonText: 'Try Again',
+          confirmButtonColor: '#3085d6'
+        });
+        return;
+      }
 
       if (rememberMe) {
         localStorage.setItem('rememberedUser', JSON.stringify({ email, password }));
       } else {
         localStorage.removeItem('rememberedUser');
       }
-      navigate('/feed');
+      
+      // Show success message before navigation
+      Swal.fire({
+        title: 'Login Successful',
+        text: 'Welcome back!',
+        icon: 'success',
+        timer: 1500,
+        showConfirmButton: false
+      }).then(() => {
+        navigate('/feed');
+      });
     } catch (err) {
-      setGeneralError(err as string || 'Login failed');
+      // Fallback error handling with SweetAlert
+      console.error('Login error:', err);
+      Swal.fire({
+        title: 'Login Failed',
+        text: typeof err === 'string' ? err : 'An unexpected error occurred. Please try again.',
+        icon: 'error',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#3085d6'
+      });
     }
   };
 
@@ -146,15 +184,18 @@ const LogIn: React.FC = () => {
                   <div className="_social_login_content_bottom_txt _mar_b40">
                     <span>Or</span>
                   </div>
-                  {generalError && <div className="alert alert-danger" role="alert">{generalError}</div>}
+                  {/* Adding a fallback for case when SweetAlert fails */}
+                  {generalError && (
+                    <div className="alert alert-warning mb-3" role="alert">
+                      <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                      {generalError}
+                    </div>
+                  )}
                   <form className="_social_login_form" onSubmit={handleSubmit}>
                     <div className="row">
                       <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                         <div className="_social_login_form_input _mar_b14">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <label className="_social_login_label _mar_b8" htmlFor="email">Email</label>
-                            {emailError && <span className="text-danger small">{emailError}</span>}
-                          </div>
+                          <label className="_social_login_label _mar_b8" htmlFor="email">Email</label>
                           <div className="position-relative">
                             <input
                               id="email"
@@ -162,10 +203,20 @@ const LogIn: React.FC = () => {
                               value={email}
                               onChange={handleEmailChange}
                               onBlur={() => validateEmail(email)}
-                              className={`form-control _social_login_input ${emailError ? 'is-invalid' : ''}`}
+                              className={`form-control _social_login_input ${emailError ? 'border-warning' : ''}`}
+                              style={{ marginBottom: emailError ? '0' : '1rem' }}
                             />
                             {emailError && (
-                              <div className="invalid-tooltip" style={{ display: 'block', position: 'absolute', top: '100%', zIndex: 5 }}>
+                              <div className="text-warning" style={{ 
+                                fontSize: '0.8rem', 
+                                marginTop: '0.25rem', 
+                                marginBottom: '1rem',
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                  <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
                                 {emailError}
                               </div>
                             )}
@@ -174,10 +225,7 @@ const LogIn: React.FC = () => {
                       </div>
                       <div className="col-xl-12 col-lg-12 col-md-12 col-sm-12">
                         <div className="_social_login_form_input _mar_b14">
-                          <div className="d-flex justify-content-between align-items-center">
-                            <label className="_social_login_label _mar_b8" htmlFor="password">Password</label>
-                            {passwordError && <span className="text-danger small">{passwordError}</span>}
-                          </div>
+                          <label className="_social_login_label _mar_b8" htmlFor="password">Password</label>
                           <div className="position-relative">
                             <input
                               id="password"
@@ -185,10 +233,20 @@ const LogIn: React.FC = () => {
                               value={password}
                               onChange={handlePasswordChange}
                               onBlur={() => validatePassword(password)}
-                              className={`form-control _social_login_input ${passwordError ? 'is-invalid' : ''}`}
+                              className={`form-control _social_login_input ${passwordError ? 'border-warning' : ''}`}
+                              style={{ marginBottom: passwordError ? '0' : '1rem' }}
                             />
                             {passwordError && (
-                              <div className="invalid-tooltip" style={{ display: 'block', position: 'absolute', top: '100%', zIndex: 5 }}>
+                              <div className="text-warning" style={{ 
+                                fontSize: '0.8rem', 
+                                marginTop: '0.25rem', 
+                                marginBottom: '1rem',
+                                display: 'flex',
+                                alignItems: 'center'
+                              }}>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-exclamation-triangle-fill me-1" viewBox="0 0 16 16">
+                                  <path d="M8.982 1.566a1.13 1.13 0 0 0-1.96 0L.165 13.233c-.457.778.091 1.767.98 1.767h13.713c.889 0 1.438-.99.98-1.767L8.982 1.566zM8 5c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 5.995A.905.905 0 0 1 8 5zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+                                </svg>
                                 {passwordError}
                               </div>
                             )}
