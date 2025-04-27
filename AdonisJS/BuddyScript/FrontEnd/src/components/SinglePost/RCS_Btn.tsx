@@ -17,6 +17,8 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
   
   // Add state for local like count to ensure it's displayed correctly
   const [localLikeCount, setLocalLikeCount] = useState<number>(post.likes.length || 0);
+  // Add processing state to prevent multiple simultaneous requests
+  const [isProcessing, setIsProcessing] = useState<boolean>(false);
   
   // Get like status from Redux
   const hasReacted = useSelector((state: RootState) => 
@@ -40,7 +42,9 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
   }, [user, post.id, post.isLikedByCurrentUser, dispatch]);
 
   const handleLikeClick = async () => {
-    if (!user) return;
+    if (!user || isProcessing) return;
+    
+    setIsProcessing(true);
     
     try {
       if (hasReacted) {
@@ -56,6 +60,8 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
       console.error('Error handling like:', error);
       // Revert optimistic update on error
       setLocalLikeCount(post.likes.length || 0);
+    } finally {
+      setIsProcessing(false);
     }
   };
 

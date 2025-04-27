@@ -12,9 +12,9 @@ if (!rootElement) {
 }
 
 createRoot(rootElement).render(
-  <StrictMode>
+  // <StrictMode>
     <Provider store={store}>
       <App />
     </Provider>
-  </StrictMode>,
+  // </StrictMode>,
 )

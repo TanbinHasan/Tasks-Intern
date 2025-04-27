@@ -72,6 +72,7 @@ const ReactionButtons: React.FC<ReactionButtonsProps> = ({
     }
   };
 
+
   return (
     <div className="_total_react" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
       <span 

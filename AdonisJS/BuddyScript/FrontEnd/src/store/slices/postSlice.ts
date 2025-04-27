@@ -134,6 +134,13 @@ export const fetchPosts = createAsyncThunk(
       const state = getState() as RootState;
       const currentUser = state.user.user;
       
+      // Check if posts are already loaded and not currently loading
+      if (state.post.posts.length > 0 && !state.post.loading) {
+        console.log('Posts already loaded, skipping fetch');
+        return state.post.posts;
+      }
+      
+      console.log('Fetching posts from API');
       // Get all posts
       const response = await fetch(`${conf.apiUrl}/posts`, {
         method: 'GET',
@@ -187,6 +194,14 @@ export const fetchPostById = createAsyncThunk(
       const state = getState() as RootState;
       const currentUser = state.user.user;
       
+      // Check if we already have the complete post data
+      const existingPost = state.post.posts.find(p => p.id === postId);
+      if (existingPost && existingPost.comments && existingPost.comments.length > 0) {
+        console.log(`Post ${postId} already loaded with comments, skipping fetch`);
+        return existingPost;
+      }
+      
+      console.log(`Fetching post ${postId} from API`);
       const response = await fetch(`${conf.apiUrl}/posts/${postId}/full`, {
         method: 'GET',
         headers: {
