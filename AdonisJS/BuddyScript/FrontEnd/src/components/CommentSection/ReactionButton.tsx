@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { likeComment, unlikeComment } from '../../store/slices/postSlice';
-import { selectUser, setReaction } from '../../store/slices/userSlice';
-import { AppDispatch } from '../../store';
+import { selectUser } from '../../store/slices/userSlice';
+import { AppDispatch, RootState } from '../../store';
 
 interface ReactionButtonsProps {
   postId: number;
@@ -30,6 +30,7 @@ const ReactionButtons: React.FC<ReactionButtonsProps> = ({
     setIsLiked(initialLikedState);
   }, [initialLikedState]);
   
+  // Update local like count when props change
   useEffect(() => {
     setLocalLikes(currentLikes || 0);
   }, [currentLikes]);
@@ -49,17 +50,10 @@ const ReactionButtons: React.FC<ReactionButtonsProps> = ({
       
       // Dispatch appropriate action
       if (newLikedState) {
-        await dispatch(likeComment({ postId, commentId }));
+        await dispatch(likeComment({ postId, commentId })).unwrap();
       } else {
-        await dispatch(unlikeComment({ postId, commentId }));
+        await dispatch(unlikeComment({ postId, commentId })).unwrap();
       }
-      
-      // Update Redux state
-      dispatch(setReaction({
-        type: 'comment',
-        id: commentId,
-        hasReacted: newLikedState
-      }));
       
     } catch (error) {
       console.error('Error handling like:', error);
@@ -71,7 +65,6 @@ const ReactionButtons: React.FC<ReactionButtonsProps> = ({
       setIsProcessing(false);
     }
   };
-
 
   return (
     <div className="_total_react" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

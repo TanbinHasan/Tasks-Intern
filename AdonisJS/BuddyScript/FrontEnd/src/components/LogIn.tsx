@@ -156,16 +156,11 @@ const LogIn: React.FC = () => {
   };
 
   const [showPassword, setShowPassword] = useState<boolean>(false);
-  const [showConfirmPassword, setShowConfirmPassword] =
-    useState<boolean>(false);
 
   const togglePasswordVisibility = (): void => {
     setShowPassword(!showPassword);
   };
 
-  const toggleConfirmPasswordVisibility = (): void => {
-    setShowConfirmPassword(!showConfirmPassword);
-  };
 
   return (
     <>

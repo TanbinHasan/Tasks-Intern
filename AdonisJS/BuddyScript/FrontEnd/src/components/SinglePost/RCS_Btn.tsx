@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { likePost, unlikePost, Post } from '../../store/slices/postSlice';
 import { selectUser, setReaction, selectHasReacted } from '../../store/slices/userSlice';
 import CommentForm from '../CommentSection/CommentForm';
+import LikesModal from '../PostContent/LikesModal';
 import { AppDispatch, RootState } from '../../store';
 
 interface RCS_BtnProps {
@@ -19,6 +20,8 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
   const [localLikeCount, setLocalLikeCount] = useState<number>(post.likes.length || 0);
   // Add processing state to prevent multiple simultaneous requests
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  // Add state for likes modal
+  const [showLikesModal, setShowLikesModal] = useState<boolean>(false);
   
   // Get like status from Redux
   const hasReacted = useSelector((state: RootState) => 
@@ -74,22 +77,44 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
     alert('Post shared!');
   };
 
-  // Debug info - remove in production
-  // console.log(`Post ${post.id}: likes=${localLikeCount}, isLiked=${hasReacted}, userId=${user?.id}`);
-  // console.log(post.likes);
+  const handleLikesClick = () => {
+    if (localLikeCount > 0) {
+      setShowLikesModal(true);
+    }
+  };
 
   return (
     <>
-      {/* Like count display */}
+      {/* Like count display - with hover effect */}
       {localLikeCount > 0 && (
-        <div className="_feed_inner_timeline_like_count" style={{
-          padding: '6px 12px',
-          fontSize: '13px',
-          color: '#65676b',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px'
-        }}>
+        <div 
+          className="_feed_inner_timeline_like_count" 
+          onClick={handleLikesClick}
+          style={{
+            padding: '6px 12px',
+            fontSize: '13px',
+            color: '#65676b',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '4px',
+            cursor: 'pointer',
+            transition: 'color 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.color = '#1877F2';
+            const span = e.currentTarget.querySelector('span');
+            if (span) {
+              span.style.textDecoration = 'underline';
+            }
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.color = '#65676b';
+            const span = e.currentTarget.querySelector('span');
+            if (span) {
+              span.style.textDecoration = 'none';
+            }
+          }}
+        >
           <div style={{
             background: '#1877f2',
             borderRadius: '50%',
@@ -244,6 +269,13 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
 
       {/* Comment Section - Toggle visibility based on showComments state */}
       {showComments && <CommentForm postId={post.id} />}
+      
+      {/* Likes Modal */}
+      <LikesModal 
+        isOpen={showLikesModal} 
+        onClose={() => setShowLikesModal(false)} 
+        likes={post.likes}
+      />
     </>
   );
 };

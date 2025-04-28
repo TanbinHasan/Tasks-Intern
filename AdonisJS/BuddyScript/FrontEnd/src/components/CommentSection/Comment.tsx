@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
-import ReactionButtons from './ReactionButton';
-import { addReply, selectPostById } from '../../store/slices/postSlice';
-import { selectUser } from '../../store/slices/userSlice';
-import { RootState } from '../../store';
-import { AppDispatch } from '../../store';
+import React, { useState, useEffect } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import ReactionButtons from "./ReactionButton";
+import { addReply, selectPostById } from "../../store/slices/postSlice";
+import { selectUser } from "../../store/slices/userSlice";
+import { RootState } from "../../store";
+import { AppDispatch } from "../../store";
 
 // Type definitions for the component props and state
 interface Reply {
@@ -32,36 +32,38 @@ interface CommentProps {
   replies?: Reply[];
 }
 
-const Comment: React.FC<CommentProps> = ({ 
-  postId, 
-  commentId, 
-  username, 
-  content, 
-  reactionCount, 
-  timeAgo, 
-  replies = [] 
+const Comment: React.FC<CommentProps> = ({
+  postId,
+  commentId,
+  username,
+  content,
+  reactionCount,
+  timeAgo,
+  replies = [],
 }) => {
   const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
   const [showReplies, setShowReplies] = useState<boolean>(false);
-  const [replyText, setReplyText] = useState<string>('');
+  const [replyText, setReplyText] = useState<string>("");
   const [localReplies, setLocalReplies] = useState<Reply[]>(replies || []);
   const dispatch = useDispatch<AppDispatch>();
   const post = useSelector((state: RootState) => selectPostById(state, postId));
   const user = useSelector(selectUser);
-  
+
   // Get the number of likes
-  const likesCount = Array.isArray(reactionCount) ? reactionCount.length : reactionCount;
-  
+  const likesCount = Array.isArray(reactionCount)
+    ? reactionCount.length
+    : reactionCount;
+
   // Get the latest replies whenever posts change
   useEffect(() => {
     if (post && commentId) {
-      const comment = post.comments.find(c => c.id === commentId);
+      const comment = post.comments.find((c) => c.id === commentId);
       if (comment && comment.replies) {
         setLocalReplies(comment.replies);
       }
     }
   }, [post, commentId]);
-  
+
   const handleReply = () => {
     setShowReplyForm(!showReplyForm);
     // Show replies when clicking reply button
@@ -73,185 +75,275 @@ const Comment: React.FC<CommentProps> = ({
   const submitReply = (e: React.FormEvent) => {
     e.preventDefault();
     if (replyText.trim() && user?.id) {
-      dispatch(addReply({ 
-        postId, 
-        commentId, 
-        text: replyText 
-      }));
-      
-      setReplyText('');
+      dispatch(
+        addReply({
+          postId,
+          commentId,
+          text: replyText,
+        })
+      );
+
+      setReplyText("");
       setShowReplyForm(false);
       // Keep replies visible after submitting
       setShowReplies(true);
     }
   };
 
+  const checkIfUserLikedComment = (comment: any, userId: number | undefined) => {
+    if (!userId || !comment || !comment.likes) return false;
+        if (Array.isArray(comment.likes)) {
+      return comment.likes.some((like: any) => {
+        return (like.user_id === userId) || (like.user && like.user.id === userId);
+      });
+    }
+    
+    return false;
+  };
+  
+  const currentUser = useSelector(selectUser);
+  const comment = post?.comments.find(c => c.id === commentId);
+  const userLikedComment = checkIfUserLikedComment(comment, currentUser?.id);
+
   return (
-    <div className="_comment_main" style={{
-      display: 'flex',
-      padding: '4px 16px',
-      width: '100%',
-      boxSizing: 'border-box',
-      marginBottom: '8px'
-    }}>
+    <div
+      className="_comment_main"
+      style={{
+        display: "flex",
+        padding: "4px 16px",
+        width: "100%",
+        boxSizing: "border-box",
+        marginBottom: "8px",
+      }}
+    >
       <div className="_comment_image">
-        <img 
-          src="assets/images/txt_img.png" 
-          alt="" 
-          className="_comment_img1" 
-          style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} 
+        <img
+          src="assets/images/txt_img.png"
+          alt=""
+          className="_comment_img1"
+          style={{
+            width: "32px",
+            height: "32px",
+            borderRadius: "50%",
+            objectFit: "cover",
+          }}
         />
       </div>
-      <div className="_comment_area" style={{
-        flex: 1,
-        marginLeft: '8px',
-      }}>
+      <div
+        className="_comment_area"
+        style={{
+          flex: 1,
+          marginLeft: "8px",
+        }}
+      >
         <div className="_comment_details">
-          <div className="_comment_status" style={{
-            backgroundColor: '#F0F2F5',
-            borderRadius: '18px',
-            padding: '8px 12px',
-            marginBottom: '2px',
-            wordBreak: 'break-word',
-            display: 'inline-block',
-            maxWidth: '100%',
-          }}>
-            <div className="_comment_name" style={{ marginBottom: '1px' }}>
-              <h4 
-                className="_comment_name_title" 
-                style={{ 
-                  fontSize: '0.8125rem', 
-                  margin: '0', 
-                  fontWeight: 'bold', 
-                  color: '#050505',
-                  lineHeight: '1.2',
+          <div
+            className="_comment_status"
+            style={{
+              backgroundColor: "#F0F2F5",
+              borderRadius: "18px",
+              padding: "8px 12px",
+              marginBottom: "2px",
+              wordBreak: "break-word",
+              display: "inline-block",
+              maxWidth: "100%",
+            }}
+          >
+            <div className="_comment_name" style={{ marginBottom: "1px" }}>
+              <h4
+                className="_comment_name_title"
+                style={{
+                  fontSize: "0.8125rem",
+                  margin: "0",
+                  fontWeight: "bold",
+                  color: "#050505",
+                  lineHeight: "1.2",
                 }}
               >
-                {username || 'Anonymous User'}
+                {username || "Anonymous User"}
               </h4>
             </div>
-            <p className="_comment_status_text" style={{ 
-              margin: '0', 
-              fontSize: '0.9375rem',
-              lineHeight: '1.3333',
-            }}>
+            <p
+              className="_comment_status_text"
+              style={{
+                margin: "0",
+                fontSize: "0.9375rem",
+                lineHeight: "1.3333",
+              }}
+            >
               {content}
             </p>
           </div>
-          
-          <div className="_comment_actions" style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            margin: '2px 0 0 12px',
-            fontSize: '0.75rem'
-          }}>
-            <ReactionButtons postId={postId} commentId={commentId} currentLikes={likesCount} />
-            <span 
-              onClick={handleReply} 
-              style={{ 
-                cursor: 'pointer', 
-                marginLeft: '8px',
-                fontWeight: '600',
-                color: '#65676B'
+
+          <div
+            className="_comment_actions"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              margin: "2px 0 0 12px",
+              fontSize: "0.75rem",
+            }}
+          >
+            <ReactionButtons
+              postId={postId}
+              commentId={commentId}
+              currentLikes={likesCount}
+              initialLikedState={userLikedComment}
+            />
+            <span
+              onClick={handleReply}
+              style={{
+                cursor: "pointer",
+                marginLeft: "8px",
+                fontWeight: "600",
+                color: "#65676B",
               }}
             >
               Reply
             </span>
-            <span style={{ marginLeft: '8px', color: '#65676B' }}>
+            <span style={{ marginLeft: "8px", color: "#65676B" }}>
               {timeAgo}
             </span>
           </div>
         </div>
-        
+
         {/* Show reply count link when replies exist but are hidden */}
         {localReplies.length > 0 && !showReplies && (
-          <div style={{ marginLeft: '32px', marginTop: '4px' }}>
-            <button 
-              type="button" 
+          <div style={{ marginLeft: "32px", marginTop: "4px" }}>
+            <button
+              type="button"
               onClick={() => setShowReplies(true)}
               style={{
-                fontSize: '0.75rem',
-                color: '#65676B',
-                cursor: 'pointer',
-                fontWeight: '600',
-                background: 'none',
-                border: 'none',
-                padding: '4px 0',
-                display: 'flex',
-                alignItems: 'center',
+                fontSize: "0.75rem",
+                color: "#65676B",
+                cursor: "pointer",
+                fontWeight: "600",
+                background: "none",
+                border: "none",
+                padding: "4px 0",
+                display: "flex",
+                alignItems: "center",
               }}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width={12}
+                height={12}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginRight: "4px" }}
+              >
                 <polyline points="9 18 15 12 9 6"></polyline>
               </svg>
-              {localReplies.length} {localReplies.length === 1 ? 'Reply' : 'Replies'}
+              {localReplies.length}{" "}
+              {localReplies.length === 1 ? "Reply" : "Replies"}
             </button>
           </div>
         )}
-        
+
         {/* Display replies only if showing */}
         {showReplies && localReplies.length > 0 && (
-          <div className="_comment_replies" style={{
-            marginLeft: '32px',
-            marginTop: '2px',
-          }}>
-            {localReplies.map(reply => {
-              const replyUsername = reply.user?.name || (reply.user ? reply.user.name : 'Anonymous');
-              const replyLikes = Array.isArray(reply.likes) ? reply.likes.length : reply.likes;
-              
+          <div
+            className="_comment_replies"
+            style={{
+              marginLeft: "32px",
+              marginTop: "2px",
+            }}
+          >
+            {localReplies.map((reply) => {
+              const replyUsername =
+                reply.user?.name ||
+                (reply.user ? reply.user.name : "Anonymous");
+              const replyLikes = Array.isArray(reply.likes)
+                ? reply.likes.length
+                : reply.likes;
+
               return (
-                <div key={reply.id} className="_reply_item" style={{
-                  display: 'flex',
-                  marginBottom: '2px',
-                  width: '100%',
-                }}>
+                <div
+                  key={reply.id}
+                  className="_reply_item"
+                  style={{
+                    display: "flex",
+                    marginBottom: "2px",
+                    width: "100%",
+                  }}
+                >
                   <div className="_reply_image">
-                    <img 
-                      src="assets/images/txt_img.png" 
-                      alt="" 
-                      style={{ width: '24px', height: '24px', borderRadius: '50%', objectFit: 'cover' }} 
+                    <img
+                      src="assets/images/txt_img.png"
+                      alt=""
+                      style={{
+                        width: "24px",
+                        height: "24px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
                     />
                   </div>
-                  <div style={{ flex: 1, marginLeft: '8px' }}>
-                    <div style={{
-                      backgroundColor: '#F0F2F5',
-                      borderRadius: '18px',
-                      padding: '6px 12px',
-                      marginBottom: '2px',
-                      display: 'inline-block',
-                      maxWidth: '100%',
-                    }}>
-                      <div style={{ marginBottom: '1px' }}>
-                        <h4 style={{ 
-                          fontSize: '0.8125rem', 
-                          margin: '0', 
-                          fontWeight: 'bold', 
-                          color: '#050505',
-                          lineHeight: '1.2',
-                        }}>
+                  <div style={{ flex: 1, marginLeft: "8px" }}>
+                    <div
+                      style={{
+                        backgroundColor: "#F0F2F5",
+                        borderRadius: "18px",
+                        padding: "6px 12px",
+                        marginBottom: "2px",
+                        display: "inline-block",
+                        maxWidth: "100%",
+                      }}
+                    >
+                      <div style={{ marginBottom: "1px" }}>
+                        <h4
+                          style={{
+                            fontSize: "0.8125rem",
+                            margin: "0",
+                            fontWeight: "bold",
+                            color: "#050505",
+                            lineHeight: "1.2",
+                          }}
+                        >
                           {replyUsername}
                         </h4>
                       </div>
-                      <p style={{ 
-                        margin: '0', 
-                        fontSize: '0.9375rem',
-                        lineHeight: '1.3333',
-                      }}>
+                      <p
+                        style={{
+                          margin: "0",
+                          fontSize: "0.9375rem",
+                          lineHeight: "1.3333",
+                        }}
+                      >
                         {reply.text}
                       </p>
                     </div>
-                    
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      margin: '2px 0 0 12px',
-                      fontSize: '0.75rem'
-                    }}>
-                      <span style={{ fontWeight: '600', color: '#65676B', cursor: 'pointer' }}>Like</span>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        margin: "2px 0 0 12px",
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontWeight: "600",
+                          color: "#65676B",
+                          cursor: "pointer",
+                        }}
+                      >
+                        Like
+                      </span>
                       {replyLikes > 0 && (
-                        <span style={{ marginLeft: '4px', color: '#65676B' }}>{replyLikes}</span>
+                        <span style={{ marginLeft: "4px", color: "#65676B" }}>
+                          {replyLikes}
+                        </span>
                       )}
-                      <span style={{ marginLeft: '8px', color: '#65676B' }}>{reply.timeAgo}</span>
+                      <span style={{ marginLeft: "8px", color: "#65676B" }}>
+                        {reply.timeAgo}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -259,26 +351,40 @@ const Comment: React.FC<CommentProps> = ({
             })}
           </div>
         )}
-        
+
         {/* Reply form */}
         {showReplyForm && (
-          <div className="_feed_inner_comment_box" style={{ 
-            marginTop: '4px',
-            marginLeft: '32px' 
-          }}>
-            <form className="_feed_inner_comment_box_form" onSubmit={submitReply} style={{
-              display: 'flex',
-              alignItems: 'center',
-              backgroundColor: '#F0F2F5',
-              borderRadius: '20px',
-              padding: '4px 8px',
-              width: '100%'
-            }}>
-              <div style={{ width: '24px', height: '24px', marginRight: '8px' }}>
-                <img 
-                  src="assets/images/comment_img.png" 
-                  alt="" 
-                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }} 
+          <div
+            className="_feed_inner_comment_box"
+            style={{
+              marginTop: "4px",
+              marginLeft: "32px",
+            }}
+          >
+            <form
+              className="_feed_inner_comment_box_form"
+              onSubmit={submitReply}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                backgroundColor: "#F0F2F5",
+                borderRadius: "20px",
+                padding: "4px 8px",
+                width: "100%",
+              }}
+            >
+              <div
+                style={{ width: "24px", height: "24px", marginRight: "8px" }}
+              >
+                <img
+                  src="assets/images/comment_img.png"
+                  alt=""
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
                 />
               </div>
               <div style={{ flex: 1 }}>
@@ -289,27 +395,37 @@ const Comment: React.FC<CommentProps> = ({
                   value={replyText}
                   onChange={(e) => setReplyText(e.target.value)}
                   style={{
-                    width: '100%',
-                    border: 'none',
-                    background: 'transparent',
-                    outline: 'none',
-                    padding: '6px 0',
-                    fontSize: '0.9375rem',
-                    height: '22px',
+                    width: "100%",
+                    border: "none",
+                    background: "transparent",
+                    outline: "none",
+                    padding: "6px 0",
+                    fontSize: "0.9375rem",
+                    height: "22px",
                   }}
                 />
               </div>
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 disabled={!replyText.trim() || !user?.id}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: replyText.trim() && user?.id ? '#1877F2' : '#BCC0C4',
-                  cursor: replyText.trim() && user?.id ? 'pointer' : 'default',
+                  background: "none",
+                  border: "none",
+                  color: replyText.trim() && user?.id ? "#1877F2" : "#BCC0C4",
+                  cursor: replyText.trim() && user?.id ? "pointer" : "default",
                 }}
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width={16} height={16} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width={16}
+                  height={16}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
                   <line x1="22" y1="2" x2="11" y2="13"></line>
                   <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                 </svg>

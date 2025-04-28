@@ -49,6 +49,11 @@ export interface Like {
   userId: number;
   timestamp: number;
   createdAt: string;
+  user?: {
+    id: number;
+    name: string;
+    email?: string;
+  };
 }
 
 // In postSlice.ts, make sure your Post interface includes:

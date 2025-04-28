@@ -276,7 +276,7 @@ const Register: React.FC = () => {
   };
 
   const handleNameChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const value = e.target.value;
+    const value = e.target.value.replace(/^\s+|(\s)\s+/g, '$1');
     setName(value);
     setTouched({ ...touched, name: true });
 

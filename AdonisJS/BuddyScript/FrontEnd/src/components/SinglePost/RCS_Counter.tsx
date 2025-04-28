@@ -23,28 +23,34 @@ const RCS_Counter: React.FC<RCS_CounterProps> = ({ post, onCommentsClick }) => {
       }}
     >
       <div>
-        {/* Make comments count clickable with underline on hover */}
-        <span 
-          onClick={onCommentsClick}
-          style={{ 
-            cursor: 'pointer',
-            fontWeight: '500',
-            // Add transition for smooth underline effect
-            transition: 'color 0.2s ease, text-decoration 0.2s ease',
-            textDecoration: 'none'
-          }}
-          onMouseOver={(e) => {
-            e.currentTarget.style.color = '#1877F2';
-            e.currentTarget.style.textDecoration = 'underline';
-          }}
-          onMouseOut={(e) => {
-            e.currentTarget.style.color = '#65676B';
-            e.currentTarget.style.textDecoration = 'none';
-          }}
-        >
-          {commentCount} {commentCount === 1 ? "Comment" : "Comments"}
-        </span> 
-        · {shareCount} {shareCount === 1 ? "Share" : "Shares"}
+        {commentCount > 0 && (
+          <span 
+            onClick={onCommentsClick}
+            style={{ 
+              cursor: 'pointer',
+              fontWeight: '500',
+              // Add transition for smooth underline effect
+              transition: 'color 0.2s ease, text-decoration 0.2s ease',
+              textDecoration: 'none'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.color = '#1877F2';
+              e.currentTarget.style.textDecoration = 'underline';
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.color = '#65676B';
+              e.currentTarget.style.textDecoration = 'none';
+            }}
+          >
+            {commentCount} {commentCount === 1 ? "Comment" : "Comments"}
+          </span> 
+        )}
+        {commentCount > 0 && shareCount > 0 && ' · '}
+        {shareCount > 0 && (
+          <>
+            {shareCount} {shareCount === 1 ? "Share" : "Shares"}
+          </>
+        )}
       </div>
     </div>
   );
