@@ -37,8 +37,8 @@ export default class PostsQuery {
       .first();
   }
 
+  // In posts_query.ts, update the findAll method:
   public async findAll() {
-    // Update this to match the findByIdWithRelations method
     return Posts.query()
       .preload('user')
       .preload('mediaItems')
@@ -61,6 +61,7 @@ export default class PostsQuery {
       .preload('likes', (query) => {
         query.preload('user');
       })
+      .withCount('comments')
       .orderBy('timestamp', 'desc');
   }
 

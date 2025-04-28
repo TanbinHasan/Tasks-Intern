@@ -42,9 +42,9 @@ const Comment: React.FC<CommentProps> = ({
   replies = [] 
 }) => {
   const [showReplyForm, setShowReplyForm] = useState<boolean>(false);
+  const [showReplies, setShowReplies] = useState<boolean>(false);
   const [replyText, setReplyText] = useState<string>('');
   const [localReplies, setLocalReplies] = useState<Reply[]>(replies || []);
-  const [showAllReplies, setShowAllReplies] = useState<boolean>(false);
   const dispatch = useDispatch<AppDispatch>();
   const post = useSelector((state: RootState) => selectPostById(state, postId));
   const user = useSelector(selectUser);
@@ -64,14 +64,10 @@ const Comment: React.FC<CommentProps> = ({
   
   const handleReply = () => {
     setShowReplyForm(!showReplyForm);
-    if (!showReplyForm) {
-      // When opening reply form, automatically show all replies
-      setShowAllReplies(true);
+    // Show replies when clicking reply button
+    if (!showReplies && localReplies.length > 0) {
+      setShowReplies(true);
     }
-  };
-
-  const handleViewPreviousReplies = () => {
-    setShowAllReplies(true);
   };
 
   const submitReply = (e: React.FormEvent) => {
@@ -85,15 +81,10 @@ const Comment: React.FC<CommentProps> = ({
       
       setReplyText('');
       setShowReplyForm(false);
+      // Keep replies visible after submitting
+      setShowReplies(true);
     }
   };
-
-  // Show the most recent replies if not showing all
-  const displayReplies = showAllReplies 
-    ? localReplies 
-    : (localReplies.length > 1 
-        ? [localReplies[0], localReplies[localReplies.length-1]] 
-        : localReplies);
 
   return (
     <div className="_comment_main" style={{
@@ -172,41 +163,40 @@ const Comment: React.FC<CommentProps> = ({
           </div>
         </div>
         
-        {/* Display replies */}
-        {localReplies && localReplies.length > 0 && (
+        {/* Show reply count link when replies exist but are hidden */}
+        {localReplies.length > 0 && !showReplies && (
+          <div style={{ marginLeft: '32px', marginTop: '4px' }}>
+            <button 
+              type="button" 
+              onClick={() => setShowReplies(true)}
+              style={{
+                fontSize: '0.75rem',
+                color: '#65676B',
+                cursor: 'pointer',
+                fontWeight: '600',
+                background: 'none',
+                border: 'none',
+                padding: '4px 0',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
+                <polyline points="9 18 15 12 9 6"></polyline>
+              </svg>
+              {localReplies.length} {localReplies.length === 1 ? 'Reply' : 'Replies'}
+            </button>
+          </div>
+        )}
+        
+        {/* Display replies only if showing */}
+        {showReplies && localReplies.length > 0 && (
           <div className="_comment_replies" style={{
             marginLeft: '32px',
             marginTop: '2px',
           }}>
-            {/* Show "View previous replies" button if needed */}
-            {!showAllReplies && localReplies.length > 2 && (
-              <button 
-                type="button" 
-                onClick={handleViewPreviousReplies}
-                style={{
-                  fontSize: '0.75rem',
-                  color: '#65676B',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  background: 'none',
-                  border: 'none',
-                  padding: '4px 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                }}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width={12} height={12} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '4px' }}>
-                  <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-                {localReplies.length - 2} {localReplies.length - 2 === 1 ? 'reply' : 'replies'}
-              </button>
-            )}
-            
-            {/* Display replies */}
-            {displayReplies.map(reply => {
-              // Get username either from reply.username or reply.user.name
+            {localReplies.map(reply => {
               const replyUsername = reply.user?.name || (reply.user ? reply.user.name : 'Anonymous');
-              // Get reply likes count
               const replyLikes = Array.isArray(reply.likes) ? reply.likes.length : reply.likes;
               
               return (
@@ -267,25 +257,6 @@ const Comment: React.FC<CommentProps> = ({
                 </div>
               );
             })}
-            
-            {/* If showing all replies and there are more than 2, add a collapse button */}
-            {showAllReplies && localReplies.length > 2 && (
-              <button 
-                type="button" 
-                onClick={() => setShowAllReplies(false)}
-                style={{
-                  fontSize: '0.75rem',
-                  color: '#65676B',
-                  cursor: 'pointer',
-                  fontWeight: '600',
-                  background: 'none',
-                  border: 'none',
-                  padding: '4px 0',
-                }}
-              >
-                Hide replies
-              </button>
-            )}
           </div>
         )}
         

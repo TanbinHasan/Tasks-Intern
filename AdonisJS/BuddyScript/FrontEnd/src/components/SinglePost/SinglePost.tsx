@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import PostContent from '../PostContent/PostContent';
 import RCS_Counter from './RCS_Counter';
 import RCS_Btn from './RCS_Btn';
@@ -13,24 +13,25 @@ interface SinglePostProps {
 
 const SinglePost: React.FC<SinglePostProps> = ({ postId }) => {
   const post = useSelector((state: RootState) => selectPostById(state, postId));
+  // Add state to control the comments visibility
+  const [showComments, setShowComments] = useState<boolean>(false);
 
   // If the post is not found, return null
   if (!post) return null;
 
-  // Debug post data
-  /* console.log('Rendering post:', {
-    id: post.id,
-    user: post.user,
-    text: post.text.substring(0, 20) + '...'
-  }); */
+  // Function to toggle comment visibility
+  const toggleComments = () => {
+    setShowComments(prevState => !prevState);
+  };
 
   return (
     <>
       <div className="_feed_inner_timeline_content _padd_r24 _padd_l24">
         <PostContent post={post} />
-        <RCS_Counter post={post} />
+        <RCS_Counter post={post} onCommentsClick={toggleComments} />
         <RCS_Btn post={post} />
-        <CommentSection postId={post.id} />
+        {/* Only render the comment section if showComments is true */}
+        {showComments && <CommentSection postId={post.id} />}
       </div>
     </>
   );

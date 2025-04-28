@@ -51,6 +51,7 @@ export interface Like {
   createdAt: string;
 }
 
+// In postSlice.ts, make sure your Post interface includes:
 export interface Post {
   id: number;
   user_id: number;
@@ -66,12 +67,15 @@ export interface Post {
     email: string;
   };
   isLikedByCurrentUser?: boolean;
+  commentCount?: number;  // Make sure this is included
+  hasMoreComments?: boolean;
 }
 
 interface PostState {
   posts: Post[];
   loading: boolean;
   error: string | null;
+  commentsLoading: { [key: number]: boolean };
 }
 
 interface LikeActionPayload {
@@ -124,9 +128,11 @@ const updatePostTimeAgo = (post: Post): Post => {
 const initialState: PostState = {
   posts: [],
   loading: false,
-  error: null
+  error: null,
+  commentsLoading: {}
 };
 
+// Update the fetchPosts thunk to preserve commentCount
 export const fetchPosts = createAsyncThunk(
   'post/fetchPosts',
   async (_, { rejectWithValue, dispatch, getState }) => {
@@ -134,14 +140,6 @@ export const fetchPosts = createAsyncThunk(
       const state = getState() as RootState;
       const currentUser = state.user.user;
       
-      // Check if posts are already loaded and not currently loading
-      if (state.post.posts.length > 0 && !state.post.loading) {
-        console.log('Posts already loaded, skipping fetch');
-        return state.post.posts;
-      }
-      
-      console.log('Fetching posts from API');
-      // Get all posts
       const response = await fetch(`${conf.apiUrl}/posts`, {
         method: 'GET',
         headers: {
@@ -163,10 +161,9 @@ export const fetchPosts = createAsyncThunk(
 
       const posts = responseData.data;
       
-      // If user is logged in, check which posts they've liked
+      // Update state with like information from post data
       if (currentUser && currentUser.id) {
         for (const post of posts) {
-          // If post already has isLikedByCurrentUser flag, sync it to Redux store
           if (post.isLikedByCurrentUser !== undefined) {
             dispatch(setReaction({
               type: 'post',
@@ -178,7 +175,11 @@ export const fetchPosts = createAsyncThunk(
       }
 
       return Array.isArray(posts)
-        ? posts.map((post: Post) => updatePostTimeAgo(post))
+        ? posts.map((post: Post) => ({
+            ...updatePostTimeAgo(post),
+            commentCount: post.commentCount || 0, // Preserve commentCount from backend
+            hasMoreComments: (post.commentCount || 0) > 10,
+          }))
         : [];
     } catch (error: any) {
       console.error('Error fetching posts:', error);
@@ -187,22 +188,12 @@ export const fetchPosts = createAsyncThunk(
   }
 );
 
-export const fetchPostById = createAsyncThunk(
-  'post/fetchPostById',
-  async (postId: number, { rejectWithValue, dispatch, getState }) => {
+
+export const fetchPostComments = createAsyncThunk(
+  'post/fetchPostComments',
+  async ({ postId }: { postId: number; offset?: number; limit?: number }, { rejectWithValue }) => {
     try {
-      const state = getState() as RootState;
-      const currentUser = state.user.user;
-      
-      // Check if we already have the complete post data
-      const existingPost = state.post.posts.find(p => p.id === postId);
-      if (existingPost && existingPost.comments && existingPost.comments.length > 0) {
-        console.log(`Post ${postId} already loaded with comments, skipping fetch`);
-        return existingPost;
-      }
-      
-      console.log(`Fetching post ${postId} from API`);
-      const response = await fetch(`${conf.apiUrl}/posts/${postId}/full`, {
+      const response = await fetch(`${conf.apiUrl}/posts/${postId}/comments`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -211,28 +202,33 @@ export const fetchPostById = createAsyncThunk(
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch post');
+        throw new Error('Failed to fetch comments');
       }
 
-      const responseData = await response.json();
-      const post = responseData.data;
-
-      // If user is logged in and post has isLikedByCurrentUser flag, sync it to Redux
-      if (currentUser && currentUser.id && post && post.isLikedByCurrentUser !== undefined) {
-        dispatch(setReaction({
-          type: 'post',
-          id: post.id,
-          hasReacted: post.isLikedByCurrentUser
-        }));
-      }
-
-      return updatePostTimeAgo(post);
+      const data = await response.json();
+      const comments = data.data || [];
+      
+      return {
+        postId,
+        comments: comments.map((comment: Comment) => ({
+          ...comment,
+          timeAgo: timeAgo(comment.timestamp),
+          replies: Array.isArray(comment.replies)
+            ? comment.replies.map(reply => ({
+                ...reply,
+                timeAgo: timeAgo(reply.timestamp),
+              }))
+            : []
+        })),
+        hasMore: data.hasMore || false
+      };
     } catch (error: any) {
-      console.error(`Error fetching post ${postId}:`, error);
-      return rejectWithValue(error.message || 'Failed to fetch post');
+      console.error(`Error fetching comments for post ${postId}:`, error);
+      return rejectWithValue(error.message || 'Failed to fetch comments');
     }
   }
 );
+
 
 export const createPost = createAsyncThunk(
   'post/createPost',
@@ -818,25 +814,6 @@ const postSlice = createSlice({
         state.error = action.payload as string;
       })
 
-      // Fetch post by ID
-      .addCase(fetchPostById.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(fetchPostById.fulfilled, (state, action) => {
-        state.loading = false;
-        const postIndex = state.posts.findIndex(post => post.id === action.payload.id);
-        if (postIndex !== -1) {
-          state.posts[postIndex] = action.payload;
-        } else {
-          state.posts.unshift(action.payload);
-        }
-      })
-      .addCase(fetchPostById.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.payload as string;
-      })
-
       // Create post
       .addCase(createPost.pending, (state) => {
         state.loading = true;
@@ -880,6 +857,27 @@ const postSlice = createSlice({
       .addCase(deletePost.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
+      })
+
+      .addCase(fetchPostComments.pending, (state, action) => {
+        state.commentsLoading[action.meta.arg.postId] = true;
+      })
+      .addCase(fetchPostComments.fulfilled, (state, action) => {
+        const { postId, comments, hasMore } = action.payload;
+        const postIndex = state.posts.findIndex(post => post.id === postId);
+        if (postIndex !== -1) {
+          // If offset is 0, replace all comments, otherwise append
+          const currentComments = action.meta.arg.offset === 0 ? [] : state.posts[postIndex].comments;
+          state.posts[postIndex] = {
+            ...state.posts[postIndex],
+            comments: [...currentComments, ...comments],
+            hasMoreComments: hasMore
+          };
+        }
+        state.commentsLoading[postId] = false;
+      })
+      .addCase(fetchPostComments.rejected, (state, action) => {
+        state.commentsLoading[action.meta.arg.postId] = false;
       })
 
       .addCase(likePost.fulfilled, (state, action: PayloadAction<LikeActionPayload>) => {

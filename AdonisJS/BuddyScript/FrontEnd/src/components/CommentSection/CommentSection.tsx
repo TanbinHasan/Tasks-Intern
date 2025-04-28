@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { selectPostById } from '../../store/slices/postSlice';
 import PreviousComments from './PreviousComments';
@@ -16,16 +16,20 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
   
   // Get comments from post data
   const comments = post?.comments || [];
-
+  const MAX_VISIBLE_COMMENTS = 2;
+  
   // Handle view toggle for comments
   const handleViewPreviousComments = () => {
     setShowAllComments(prevState => !prevState);
   };
 
-  // Define which comments to show (either all or just the most recent 2)
+  // Define which comments to show
   const visibleComments = showAllComments 
     ? comments 
-    : (comments.length > 2 ? comments.slice(-2) : comments);
+    : (comments.length > MAX_VISIBLE_COMMENTS ? comments.slice(0, MAX_VISIBLE_COMMENTS) : comments);
+  
+  // Calculate how many comments are hidden
+  const hiddenCommentsCount = comments.length > MAX_VISIBLE_COMMENTS ? comments.length - MAX_VISIBLE_COMMENTS : 0;
 
   return (
     <div className="_comments_container" style={{
@@ -59,11 +63,11 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         width: '100%',
         boxSizing: 'border-box',
       }}>
-        {/* Show "Previous comments" button at the top when there are more than 2 comments */}
-        {!showAllComments && comments.length > 2 && (
+        {/* Show "Previous comments" button at the top when there are more than MAX_VISIBLE_COMMENTS */}
+        {!showAllComments && hiddenCommentsCount > 0 && (
           <div style={{ padding: '8px 16px 0' }}>
             <PreviousComments 
-              count={comments.length - 2} 
+              count={hiddenCommentsCount} 
               onClick={handleViewPreviousComments} 
             />
           </div>
@@ -95,7 +99,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
         </div>
         
         {/* Show hide comments button if showing all */}
-        {showAllComments && comments.length > 2 && (
+        {showAllComments && hiddenCommentsCount > 0 && (
           <div style={{ padding: '0 16px 8px' }}>
             <button 
               onClick={() => setShowAllComments(false)}
@@ -109,7 +113,7 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
                 padding: '8px 0',
               }}
             >
-              Hide comments
+              Hide older comments
             </button>
           </div>
         )}

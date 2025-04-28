@@ -1,5 +1,5 @@
 import { BrowserRouter, Route, Routes, Navigate } from 'react-router-dom';
-import React, { useEffect, useState, ReactNode, useCallback } from 'react';
+import React, { useEffect, useState, ReactNode } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import LogIn from './components/LogIn';
 import Register from './components/Register';
@@ -8,8 +8,7 @@ import {
   isLoggedIn, 
   selectUser, 
   selectUserLoading, 
-  clearUserState,
-  selectUserReactions
+  clearUserState
 } from './store/slices/userSlice';
 import { 
   updateTimeAgo, 
@@ -17,59 +16,7 @@ import {
   clearPostState,
   selectAllPosts
 } from './store/slices/postSlice';
-import { AppDispatch, RootState } from './store';
-import conf from './conf/conf';
-
-const fetchUserLikes = async (userId: number | undefined, dispatch: AppDispatch) => {
-  // Early return if userId is not defined
-  if (userId === undefined) return;
-  
-  try {
-    console.log('Fetching user likes from API');
-    // First get all posts
-    const postsResponse = await fetch(`${conf.apiUrl}/posts`, {
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    
-    if (!postsResponse.ok) return;
-    
-    const postsData = await postsResponse.json();
-    if (!postsData.data || !Array.isArray(postsData.data)) return;
-    
-    // For each post, check if the user has liked it - use Promise.all for better performance
-    const likePromises = postsData.data.map(async (post: { id: any; }) => {
-      try {
-        const likeResponse = await fetch(`${conf.apiUrl}/posts/${post.id}/like`, {
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' }
-        });
-        
-        if (likeResponse.ok) {
-          const likeData = await likeResponse.json();
-          
-          if (likeData.data && typeof likeData.data.liked === 'boolean') {
-            // Update Redux store with the like status
-            dispatch({
-              type: 'user/setReaction',
-              payload: {
-                type: 'post',
-                id: post.id,
-                hasReacted: likeData.data.liked
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.error(`Error checking like for post ${post.id}:`, error);
-      }
-    });
-    
-    await Promise.all(likePromises);
-  } catch (error) {
-    console.error('Error fetching user likes:', error);
-  }
-};
+import { AppDispatch } from './store';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -78,21 +25,11 @@ interface ProtectedRouteProps {
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const user = useSelector(selectUser);
   const loading = useSelector(selectUserLoading);
-  const [authChecked, setAuthChecked] = useState(false);
   
-  useEffect(() => {
-    // We only need to track if the auth check is complete, not do another check
-    if (!loading) {
-      setAuthChecked(true);
-    }
-  }, [loading]);
-
-  // Show loading state until auth check completes
-  if (loading || !authChecked) {
+  if (loading) {
     return <div>Loading...</div>;
   }
 
-  // Redirect if not authenticated
   if (!user) {
     return <Navigate to="/" replace />;
   }
@@ -102,9 +39,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
 function AppRoutes() {
   const user = useSelector(selectUser);
-  const loading = useSelector(selectUserLoading);
   
-  // Handle redirect logic in routes directly
   return (
     <Routes>
       <Route path="/" element={user ? <Navigate to="/feed" replace /> : <LogIn />} />
@@ -127,51 +62,74 @@ function App() {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
   const posts = useSelector(selectAllPosts);
-  const userReactions = useSelector(selectUserReactions);
+  
+  // Use ref to track if auth and post fetching has been initiated
+  const authInitiated = React.useRef<boolean>(false);
+  const postsFetchInitiated = React.useRef<boolean>(false);
 
-  // Handle initial auth check and app setup - only once at startup
+  // Initialize app only once
   useEffect(() => {
     const initializeApp = async () => {
-      console.log("Initializing app");
-      
-      // Clear state on initialization to ensure clean start
-      // Only clear states if this is a fresh session, not a refresh
-      if (!sessionStorage.getItem('app_initialized')) {
-        console.log("New session - clearing states");
-        dispatch(clearUserState());
-        dispatch(clearPostState());
-        sessionStorage.setItem('app_initialized', 'true');
-      } else {
-        console.log("Existing session - keeping state");
+      // Check if app is already initialized in this session
+      if (sessionStorage.getItem('app_initialized')) {
+        setIsInitialized(true);
+        return;
       }
-      
-      try {
-        // Check if user is logged in when app initializes
-        console.log("Checking authentication status");
-        await dispatch(isLoggedIn()).unwrap();
-      } catch (error) {
-        console.error("Authentication check failed:", error);
-      }
-      
-      // Set up timer for updating timeAgo
-      const intervalId = setInterval(() => {
-        dispatch(updateTimeAgo());
-      }, 60000);
 
-      setIsInitialized(true);
-      console.log("App initialization completed");
+      // Clear state on first visit
+      dispatch(clearUserState());
+      dispatch(clearPostState());
+      sessionStorage.setItem('app_initialized', 'true');
       
-      return () => clearInterval(intervalId);
+      setIsInitialized(true);
     };
     
     initializeApp();
-  }, []); // Empty dependency array means this only runs once
+  }, [dispatch]);
 
-  // Setup event listener for page refreshes
+  // Authentication check - run only once
+  useEffect(() => {
+    if (!authInitiated.current && isInitialized) {
+      authInitiated.current = true;
+      dispatch(isLoggedIn()).catch(error => {
+        console.error("Authentication check failed:", error);
+        // Reset flag on error to allow retry
+        authInitiated.current = false;
+      });
+    }
+  }, [dispatch, isInitialized]);
+
+  // Fetch posts - only when user is authenticated and posts haven't been fetched
+  useEffect(() => {
+    if (user && !postsFetchInitiated.current && posts.length === 0) {
+      postsFetchInitiated.current = true;
+      dispatch(fetchPosts()).catch(error => {
+        console.error("Error fetching posts:", error);
+        // Reset flag on error to allow retry
+        postsFetchInitiated.current = false;
+      });
+    }
+  }, [user, posts.length, dispatch]);
+
+  // Reset posts fetch flag when user logs out
+  useEffect(() => {
+    if (!user) {
+      postsFetchInitiated.current = false;
+    }
+  }, [user]);
+
+  // Update time ago periodically
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      dispatch(updateTimeAgo());
+    }, 60000);
+
+    return () => clearInterval(intervalId);
+  }, [dispatch]);
+
+  // Handle page refresh
   useEffect(() => {
     const handleBeforeUnload = () => {
-      // Keep the session initialized flag during refreshes
-      // But we'll clear it if they actually leave the page
       sessionStorage.setItem('refreshing', 'true');
       
       setTimeout(() => {
@@ -185,31 +143,6 @@ function App() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, []);
-
-  // Fetch posts and likes when user is loaded - but only if we don't have them yet
-  useEffect(() => {
-    if (user && typeof user.id === 'number' && isInitialized) {
-      const loadUserData = async () => {
-        // Only fetch posts if we don't have them
-        if (posts.length === 0) {
-          console.log("Fetching posts for authenticated user");
-          await dispatch(fetchPosts());
-        } else {
-          console.log("Posts already loaded, skipping fetch");
-        }
-        
-        // Only fetch likes if we don't have them
-        if (Object.keys(userReactions).length === 0) {
-          console.log("Fetching user reactions");
-          await fetchUserLikes(user.id, dispatch);
-        } else {
-          console.log("User reactions already loaded, skipping fetch");
-        }
-      };
-      
-      loadUserData();
-    }
-  }, [user, isInitialized, dispatch, posts.length, userReactions]);
 
   if (!isInitialized) {
     return <div className="loading-container">Loading application...</div>;

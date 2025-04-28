@@ -67,57 +67,52 @@ export default class PostsController {
     }
   }
 
-  public async getAllPosts({ request, response, auth }: HttpContext) {
-    await request.validateUsing(postsValidator.getAllPosts, {
-      data: {}
-    })
-  
+  // Update the getAllPosts method in posts_controller.ts:
+public async getAllPosts({ request, response, auth }: HttpContext) {
+  await request.validateUsing(postsValidator.getAllPosts, {
+    data: {}
+  })
+
+  try {
+    const posts = await this.postsService.getAllPosts();
+    
+    // Check if posts are liked by the current user
+    let currentUserId = null;
     try {
-      const posts = await this.postsService.getAllPosts();
+      // Try to get the authenticated user
+      const user = await auth.authenticate();
+      currentUserId = user.id;
+    } catch (authError) {
+      // If not authenticated, don't modify likes
+    }
+    
+    // Transform posts with like status and comment count
+    const postsWithLikes = await Promise.all(posts.map(async (post) => {
+      const postJSON = post.toJSON();
       
-      // Check if posts are liked by the current user
-      let currentUserId = null;
-      try {
-        // Try to get the authenticated user
-        const user = await auth.authenticate();
-        currentUserId = user.id;
-      } catch (authError) {
-        // If not authenticated, don't modify likes
+      if (currentUserId) {
+        // Check if user has liked this post
+        const like = await this.postsService.checkUserLiked(post.id, currentUserId);
+        postJSON.isLikedByCurrentUser = !!like;
       }
       
-      // If user is authenticated, check each post
-      const postsWithLikes = await Promise.all(posts.map(async (post) => {
-        const postJSON = post.toJSON();
-        
-        if (currentUserId) {
-          // Check if user has liked this post
-          const like = await this.postsService.checkUserLiked(post.id, currentUserId);
-          postJSON.isLikedByCurrentUser = !!like;
-        }
-        
-        return postJSON;
-      }));
+      // Add comment count
+      postJSON.commentCount = post.$extras.comments_count || postJSON.comments?.length || 0;
       
-      // Debug log to check if posts have media items
-      console.log(`Returning ${postsWithLikes.length} posts with media items:`, 
-        postsWithLikes.map(p => ({
-          id: p.id, 
-          mediaCount: p.mediaItems ? p.mediaItems.length : 0,
-          isLikedByCurrentUser: p.isLikedByCurrentUser
-        }))
-      );
-  
-      return response.json({
-        status: 'success',
-        data: postsWithLikes
-      })
-    } catch (error: any) {
-      return response.status(error.status || 500).json({
-        status: 'error',
-        message: error.message
-      })
-    }
+      return postJSON;
+    }));
+    
+    return response.json({
+      status: 'success',
+      data: postsWithLikes
+    })
+  } catch (error: any) {
+    return response.status(error.status || 500).json({
+      status: 'error',
+      message: error.message
+    })
   }
+}
 
   public async createPost({ request, response, auth }: HttpContext) {
     const data = await request.validateUsing(postsValidator.createPost)
