@@ -93,7 +93,7 @@ const LikesModal: React.FC<LikesModalProps> = ({ isOpen, onClose, likes }) => {
           <h3 style={titleStyle}>
             {likes.length === 1 ? '1 person liked this' : `${likes.length} people liked this`}
           </h3>
-          <button style={closeButtonStyle} onClick={onClose}>×</button>
+          <button style={closeButtonStyle} onClick={onClose}></button>
         </div>
         
         <div>
