@@ -68,51 +68,60 @@ export default class PostsController {
   }
 
   // Update the getAllPosts method in posts_controller.ts:
-public async getAllPosts({ request, response, auth }: HttpContext) {
-  await request.validateUsing(postsValidator.getAllPosts, {
-    data: {}
-  })
-
-  try {
-    const posts = await this.postsService.getAllPosts();
-    
-    // Check if posts are liked by the current user
-    let currentUserId = null;
+  public async getAllPosts({ request, response, auth }: HttpContext) {
+    const { page = 1, limit = 5 } = await request.validateUsing(postsValidator.getAllPosts)
+  
     try {
-      // Try to get the authenticated user
-      const user = await auth.authenticate();
-      currentUserId = user.id;
-    } catch (authError) {
-      // If not authenticated, don't modify likes
-    }
-    
-    // Transform posts with like status and comment count
-    const postsWithLikes = await Promise.all(posts.map(async (post) => {
-      const postJSON = post.toJSON();
+      const paginatedPosts = await this.postsService.getAllPosts(page, limit);
       
-      if (currentUserId) {
-        // Check if user has liked this post
-        const like = await this.postsService.checkUserLiked(post.id, currentUserId);
-        postJSON.isLikedByCurrentUser = !!like;
+      // Check if posts are liked by the current user
+      let currentUserId = null;
+      try {
+        // Try to get the authenticated user
+        const user = await auth.authenticate();
+        currentUserId = user.id;
+      } catch (authError) {
+        // If not authenticated, don't modify likes
       }
       
-      // Add comment count
-      postJSON.commentCount = post.$extras.comments_count || postJSON.comments?.length || 0;
+      // Transform posts with like status and comment count
+      const postsWithLikes = await Promise.all(paginatedPosts.map(async (post) => {
+        const postJSON = post.toJSON();
+        
+        if (currentUserId) {
+          // Check if user has liked this post
+          const like = await this.postsService.checkUserLiked(post.id, currentUserId);
+          postJSON.isLikedByCurrentUser = !!like;
+        }
+        
+        // Add comment count
+        postJSON.commentCount = post.$extras.comments_count || postJSON.comments?.length || 0;
+        
+        return postJSON;
+      }));
       
-      return postJSON;
-    }));
-    
-    return response.json({
-      status: 'success',
-      data: postsWithLikes
-    })
-  } catch (error: any) {
-    return response.status(error.status || 500).json({
-      status: 'error',
-      message: error.message
-    })
+      // Construct pagination metadata
+      const meta = {
+        currentPage: page,
+        perPage: limit,
+        total: paginatedPosts.length > 0 ? 
+          (page * limit + (paginatedPosts.length < limit ? 0 : 1)) : 0,
+        lastPage: paginatedPosts.length < limit ? page : page + 1,
+        hasMore: paginatedPosts.length >= limit
+      };
+      
+      return response.json({
+        status: 'success',
+        data: postsWithLikes,
+        meta
+      });
+    } catch (error: any) {
+      return response.status(error.status || 500).json({
+        status: 'error',
+        message: error.message
+      })
+    }
   }
-}
 
   public async createPost({ request, response, auth }: HttpContext) {
     const data = await request.validateUsing(postsValidator.createPost)

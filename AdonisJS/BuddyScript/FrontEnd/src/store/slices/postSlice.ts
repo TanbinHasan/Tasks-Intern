@@ -81,6 +81,11 @@ interface PostState {
   loading: boolean;
   error: string | null;
   commentsLoading: { [key: number]: boolean };
+  pagination: {
+    currentPage: number;
+    totalPages: number;
+    hasMore: boolean;
+  };
 }
 
 interface LikeActionPayload {
@@ -140,18 +145,23 @@ const initialState: PostState = {
   posts: [],
   loading: false,
   error: null,
-  commentsLoading: {}
+  commentsLoading: {},
+  pagination: {
+    currentPage: 1,
+    totalPages: 1,
+    hasMore: false
+  }
 };
 
 // Update the fetchPosts thunk to preserve commentCount
 export const fetchPosts = createAsyncThunk(
   'post/fetchPosts',
-  async (_, { rejectWithValue, dispatch, getState }) => {
+  async (page: number = 1, { rejectWithValue, dispatch, getState }) => {
     try {
       const state = getState() as RootState;
       const currentUser = state.user.user;
 
-      const response = await fetch(`${conf.apiUrl}/posts`, {
+      const response = await fetch(`${conf.apiUrl}/posts?page=${page}&limit=5`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -167,10 +177,15 @@ export const fetchPosts = createAsyncThunk(
 
       if (!responseData.data) {
         console.error('Invalid response format:', responseData);
-        return [];
+        return { posts: [], pagination: { currentPage: page, totalPages: 1, hasMore: false } };
       }
 
       const posts = responseData.data;
+      const meta = responseData.meta || {
+        currentPage: page,
+        lastPage: 1,
+        hasMore: false
+      };
 
       // Update state with like information from post data
       if (currentUser && currentUser.id) {
@@ -185,13 +200,23 @@ export const fetchPosts = createAsyncThunk(
         }
       }
 
-      return Array.isArray(posts)
+      // Process and return the posts with the pagination metadata
+      const processedPosts = Array.isArray(posts)
         ? posts.map((post: Post) => ({
           ...updatePostTimeAgo(post),
-          commentCount: post.commentCount || 0, // Preserve commentCount from backend
+          commentCount: post.commentCount || 0,
           hasMoreComments: (post.commentCount || 0) > 10,
         }))
         : [];
+
+      return {
+        posts: processedPosts,
+        pagination: {
+          currentPage: meta.currentPage,
+          totalPages: meta.lastPage || 1,
+          hasMore: meta.hasMore
+        }
+      };
     } catch (error: any) {
       console.error('Error fetching posts:', error);
       return rejectWithValue(error.message || 'Failed to fetch posts');
@@ -409,14 +434,14 @@ export const likePost = createAsyncThunk<LikeActionPayload, number>(
     const state = getState() as RootState;
     const user = state.user.user;
     const post = state.post.posts.find(p => p.id === postId);
-    
+
     if (!user) return rejectWithValue('User not logged in') as any;
-    
+
     if (post?.isLikedByCurrentUser) {
       const result = await dispatch(unlikePost(postId));
       return result.payload as LikeActionPayload;
     }
-    
+
     try {
       const response = await fetch(`${conf.apiUrl}/posts/${postId}/like`, {
         method: 'POST',
@@ -441,8 +466,8 @@ export const likePost = createAsyncThunk<LikeActionPayload, number>(
       }));
 
       // Return the current user info in the payload
-      return { 
-        postId, 
+      return {
+        postId,
         isLiked: true,
         currentUser: {
           id: user.id || 0,
@@ -839,7 +864,19 @@ const postSlice = createSlice({
       })
       .addCase(fetchPosts.fulfilled, (state, action) => {
         state.loading = false;
-        state.posts = action.payload;
+        // If it's the first page, replace posts; otherwise, append
+        if (action.meta.arg === 1 || action.meta.arg === undefined) {
+          state.posts = action.payload.posts;
+        } else {
+          // Append new posts, making sure not to add duplicates
+          const existingPostIds = state.posts.map(post => post.id);
+          const newPosts = action.payload.posts.filter(
+            (post: Post) => !existingPostIds.includes(post.id)
+          );
+          state.posts = [...state.posts, ...newPosts];
+        }
+        // Update pagination info
+        state.pagination = action.payload.pagination;
       })
       .addCase(fetchPosts.rejected, (state, action) => {
         state.loading = false;
@@ -915,11 +952,11 @@ const postSlice = createSlice({
       .addCase(likePost.fulfilled, (state, action) => {
         const { postId, isLiked, currentUser } = action.payload;
         const postIndex = state.posts.findIndex(p => p.id === postId);
-        
+
         if (postIndex !== -1) {
           // Update like status
           state.posts[postIndex].isLikedByCurrentUser = isLiked;
-          
+
           if (isLiked && currentUser) {
             // Create a new like with the current user's information
             const newLike: Like = {
@@ -934,7 +971,7 @@ const postSlice = createSlice({
                 email: currentUser.email || ''
               }
             };
-            
+
             // Add the new like to the likes array
             state.posts[postIndex].likes.push(newLike);
           } else if (isLiked) {
@@ -1013,7 +1050,7 @@ const postSlice = createSlice({
 export const {
   updateTimeAgo, syncPostLikes
 } = postSlice.actions;
-
+export const selectPagination = (state: RootState) => state.post.pagination;
 // Export selectors
 export const selectAllPosts = (state: RootState) => state.post.posts;
 export const selectPostById = (state: RootState, postId: number) =>

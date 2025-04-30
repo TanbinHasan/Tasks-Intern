@@ -8,7 +8,10 @@ export const postsValidator = {
   ),
 
   getAllPosts: vine.compile(
-    vine.object({})
+    vine.object({
+      page: vine.number().positive().optional(),
+      limit: vine.number().positive().optional()
+    })
   ),
 
   createPost: vine.compile(

@@ -38,8 +38,12 @@ export default class PostsQuery {
   }
 
   // In posts_query.ts, update the findAll method:
-  public async findAll() {
-    return Posts.query()
+  public async findAll(page: number = 1, limit: number = 5) {
+    // Calculate the offset based on page and limit
+    const offset = (page - 1) * limit;
+
+    // Using the offset approach for pagination to ensure compatibility
+    const posts = await Posts.query()
       .preload('user')
       .preload('mediaItems')
       .preload('comments', (query) => {
@@ -62,7 +66,11 @@ export default class PostsQuery {
         query.preload('user');
       })
       .withCount('comments')
-      .orderBy('timestamp', 'desc');
+      .orderBy('timestamp', 'desc')
+      .offset(offset)
+      .limit(limit);
+
+    return posts;
   }
 
   public async create(data: {

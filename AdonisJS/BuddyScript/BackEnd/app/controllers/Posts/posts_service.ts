@@ -30,8 +30,8 @@ export default class PostsService {
     return post;
   }
 
-  public async getAllPosts() {
-    return this.postsQuery.findAll();
+  public async getAllPosts(page: number = 1, limit: number = 5) {
+    return this.postsQuery.findAll(page, limit);
   }
 
   public async createPost(data: {
