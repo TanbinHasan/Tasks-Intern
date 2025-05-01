@@ -153,20 +153,31 @@ const initialState: PostState = {
   }
 };
 
-// Update the fetchPosts thunk to preserve commentCount
 export const fetchPosts = createAsyncThunk(
   'post/fetchPosts',
-  async (page: number = 1, { rejectWithValue, dispatch, getState }) => {
+  async (page: number = 1, { rejectWithValue, dispatch, getState, signal }) => {
     try {
+      // Check if we're already fetching this page
       const state = getState() as RootState;
       const currentUser = state.user.user;
+      
+      // Skip fetching if we already have this page (to prevent duplicate requests)
+      if (page > 1 && state.post.pagination.currentPage >= page) {
+        console.log(`Page ${page} already loaded, skipping fetch`);
+        return {
+          posts: [],
+          pagination: state.post.pagination
+        };
+      }
 
+      console.log(`Fetching posts for page ${page}...`);
       const response = await fetch(`${conf.apiUrl}/posts?page=${page}&limit=5`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
+        signal, // Pass the AbortController signal to allow cancellation
       });
 
       if (!response.ok) {
@@ -218,6 +229,12 @@ export const fetchPosts = createAsyncThunk(
         }
       };
     } catch (error: any) {
+      // Don't report error if it's an AbortError (caused by component unmounting)
+      if (error.name === 'AbortError') {
+        console.log('Fetch aborted');
+        return rejectWithValue('Fetch aborted');
+      }
+      
       console.error('Error fetching posts:', error);
       return rejectWithValue(error.message || 'Failed to fetch posts');
     }
