@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { likePost, unlikePost, Post } from '../../store/slices/postSlice';
 import { selectUser, setReaction, selectHasReacted } from '../../store/slices/userSlice';
-import CommentForm from '../CommentSection/CommentForm';
 import LikesModal from '../PostContent/LikesModal';
 import { AppDispatch, RootState } from '../../store';
 

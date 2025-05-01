@@ -327,25 +327,6 @@ export const createPost = createAsyncThunk(
         }
       }
 
-      // Immediately fetch the complete post with user data
-      try {
-        const fullPostResponse = await fetch(`${conf.apiUrl}/posts/${postId}/full`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        });
-
-        if (fullPostResponse.ok) {
-          const fullPostData = await fullPostResponse.json();
-          return updatePostTimeAgo(fullPostData.data);
-        }
-      } catch (error) {
-        console.error('Error fetching complete post:', error);
-        // Continue with fallback below
-      }
-
       // Fallback: Get the current user from Redux state to include with the post
       const state = getState() as RootState;
       const currentUser = state.user.user;
@@ -398,8 +379,7 @@ export const updatePost = createAsyncThunk(
       // This would typically involve deleting old media and adding new ones
       // Simplified version here assumes backend handles this
 
-      // Fetch the updated post
-      const updatedPostResponse = await fetch(`${conf.apiUrl}/posts/${postData.id}/full`, {
+      const updatedPostResponse = await fetch(`${conf.apiUrl}/posts/${postData.id}/full?`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -410,9 +390,9 @@ export const updatePost = createAsyncThunk(
       if (!updatedPostResponse.ok) {
         throw new Error('Failed to fetch updated post');
       }
-
       const updatedPostData = await updatedPostResponse.json();
       return updatePostTimeAgo(updatedPostData.data);
+
     } catch (error: any) {
       console.error(`Error updating post ${postData.id}:`, error);
       return rejectWithValue(error.message || 'Failed to update post');
@@ -593,6 +573,7 @@ export const addComment = createAsyncThunk(
         postId: commentData.postId,
         post: updatePostTimeAgo(postData.data)
       };
+      
     } catch (error: any) {
       console.error(`Error adding comment to post ${commentData.postId}:`, error);
       return rejectWithValue(error.message || 'Failed to add comment');
