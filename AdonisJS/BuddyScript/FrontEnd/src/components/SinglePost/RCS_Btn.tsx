@@ -8,12 +8,13 @@ import { AppDispatch, RootState } from '../../store';
 
 interface RCS_BtnProps {
   post: Post;
+  onCommentsClick: () => void;
+  showingComments?: boolean;
 }
 
-const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
+const RCS_Btn: React.FC<RCS_BtnProps> = ({ post, onCommentsClick, showingComments = false }) => {
   const dispatch = useDispatch<AppDispatch>();
   const user = useSelector(selectUser);
-  const [showComments, setShowComments] = useState<boolean>(false);
   const [shared, setShared] = useState<boolean>(false);
   
   // Add state for local like count to ensure it's displayed correctly
@@ -66,10 +67,6 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleCommentClick = () => {
-    setShowComments(!showComments);
   };
 
   const handleShareClick = () => {
@@ -185,7 +182,7 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
         {/* Comment Button */}
         <button
           className="_feed_reaction"
-          onClick={handleCommentClick}
+          onClick={onCommentsClick}
           style={{
             background: 'transparent',
             border: 'none',
@@ -195,8 +192,8 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: showComments ? '#1877f2' : '#65676b',
-            fontWeight: showComments ? '600' : 'normal',
+            color: showingComments ? '#1877f2' : '#65676b',
+            fontWeight: showingComments ? '600' : 'normal',
             transition: 'all 0.2s ease',
             flex: '1',
             fontSize: '14px'
@@ -211,7 +208,7 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
               height={18}
               fill="none"
               viewBox="0 0 24 24"
-              stroke={showComments ? '#1877f2' : '#65676b'}
+              stroke={showingComments ? '#1877f2' : '#65676b'}
             >
               <path
                 strokeLinecap="round"
@@ -266,9 +263,6 @@ const RCS_Btn: React.FC<RCS_BtnProps> = ({ post }) => {
           </span>
         </button>
       </div>
-
-      {/* Comment Section - Toggle visibility based on showComments state */}
-      {showComments && <CommentForm postId={post.id} />}
       
       {/* Likes Modal */}
       <LikesModal 

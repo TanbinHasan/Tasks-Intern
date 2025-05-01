@@ -7,7 +7,8 @@ interface RCS_CounterProps {
 }
 
 const RCS_Counter: React.FC<RCS_CounterProps> = ({ post, onCommentsClick }) => {
-  const commentCount = post.comments?.length || 0;
+  // Use commentCount from post metadata if available, otherwise fallback to actual comments length
+  const commentCount = post.commentCount || post.comments?.length || 0;
   const shareCount: number = 0; // Currently hardcoded, can be updated later
 
   return (

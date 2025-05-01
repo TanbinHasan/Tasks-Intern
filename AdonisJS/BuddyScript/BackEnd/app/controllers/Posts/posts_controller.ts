@@ -285,12 +285,17 @@ export default class PostsController {
       data: {id: Number(params.id)}
     })
     
+    // Get pagination parameters from query string
+    const offset = request.input('offset', 0)
+    const limit = request.input('limit', 5) // Default to 5 comments per page
+    
     try {
-      const comments = await this.postsService.getPostComments(id)
+      const result = await this.postsService.getPostComments(id, offset, limit)
       
       return response.json({
         status: 'success',
-        data: comments
+        data: result.comments,
+        hasMore: result.hasMore
       })
     } catch (error: any) {
       return response.status(error.status || 500).json({

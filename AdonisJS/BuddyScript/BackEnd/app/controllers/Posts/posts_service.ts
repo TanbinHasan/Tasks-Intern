@@ -115,16 +115,28 @@ export default class PostsService {
     return this.postsQuery.findPostLikes(id);
   }
 
-  public async getPostComments(id: number) {
+  public async getPostComments(id: number, offset: number = 0, limit: number = 5) {
     const post = await this.postsQuery.findById(id);
-
+  
     if (!post) {
       const error = new Error('Post not found') as any;
       error.status = 404;
       throw error;
     }
-
-    return this.postsQuery.findPostComments(id);
+  
+    // Get total comment count first
+    const totalComments = await this.postsQuery.countPostComments(id);
+    
+    // Get paginated comments
+    const comments = await this.postsQuery.findPostCommentsPaginated(id, offset, limit);
+    
+    // Determine if there are more comments to load
+    const hasMore = offset + comments.length < totalComments;
+    
+    return {
+      comments,
+      hasMore
+    };
   }
 
   public async getUserPosts(userId: number) {

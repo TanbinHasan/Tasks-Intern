@@ -157,4 +157,28 @@ export default class PostsQuery {
       .preload('user')
       .first();
   }
+
+  public async countPostComments(postId: number) {
+    const result = await Comments.query()
+      .where('post_id', postId)
+      .count('* as total');
+    
+    return Number(result[0].$extras.total) || 0;
+  }
+  
+  public async findPostCommentsPaginated(postId: number, offset: number = 0, limit: number = 5) {
+    return Comments.query()
+      .where('post_id', postId)
+      .orderBy('timestamp', 'desc') // Get newest comments first
+      .offset(offset)
+      .limit(limit)
+      .preload('user')
+      .preload('replies', (query) => {
+        query
+          .orderBy('timestamp', 'desc')
+          .preload('user')
+          .preload('likes');
+      })
+      .preload('likes');
+  }
 }

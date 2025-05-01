@@ -56,7 +56,6 @@ export interface Like {
   };
 }
 
-// In postSlice.ts, make sure your Post interface includes:
 export interface Post {
   id: number;
   user_id: number;
@@ -72,7 +71,7 @@ export interface Post {
     email: string;
   };
   isLikedByCurrentUser?: boolean;
-  commentCount?: number;  // Make sure this is included
+  commentCount?: number;
   hasMoreComments?: boolean;
 }
 
@@ -244,9 +243,9 @@ export const fetchPosts = createAsyncThunk(
 
 export const fetchPostComments = createAsyncThunk(
   'post/fetchPostComments',
-  async ({ postId }: { postId: number; offset?: number; limit?: number }, { rejectWithValue }) => {
+  async ({ postId, offset = 0, limit = 5 }: { postId: number; offset?: number; limit?: number }, { rejectWithValue }) => {
     try {
-      const response = await fetch(`${conf.apiUrl}/posts/${postId}/comments`, {
+      const response = await fetch(`${conf.apiUrl}/posts/${postId}/comments?offset=${offset}&limit=${limit}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -952,11 +951,11 @@ const postSlice = createSlice({
         const { postId, comments, hasMore } = action.payload;
         const postIndex = state.posts.findIndex(post => post.id === postId);
         if (postIndex !== -1) {
-          // If offset is 0, replace all comments, otherwise append
+          // If offset is 0, replace all comments, otherwise prepend new comments
           const currentComments = action.meta.arg.offset === 0 ? [] : state.posts[postIndex].comments;
           state.posts[postIndex] = {
             ...state.posts[postIndex],
-            comments: [...currentComments, ...comments],
+            comments: [...comments, ...currentComments], // Prepend new comments
             hasMoreComments: hasMore
           };
         }
