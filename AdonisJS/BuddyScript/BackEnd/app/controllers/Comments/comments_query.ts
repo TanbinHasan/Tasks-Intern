@@ -12,13 +12,17 @@ export default class CommentsQuery {
   public async findByIdWithRelations(id: number) {
     return Comments.query()
       .where('id', id)
-      .preload('user')
+      .preload('user', (query) => {
+        query.select('id', 'name');
+      })
       .preload('post')
       .preload('replies', (query) => {
         query.orderBy('timestamp', 'desc').preload('user')
       })
       .preload('likes', (query) => {
-        query.preload('user')
+        query.preload('user', (query) => {
+          query.select('id', 'name');
+        })
       })
       .first();
   }

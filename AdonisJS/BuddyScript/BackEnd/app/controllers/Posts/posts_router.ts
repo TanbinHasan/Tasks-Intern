@@ -4,7 +4,7 @@ const PostsController = () => import('./posts_controller.js')
 
 router.group(() => {
   router.get('/posts/:id', [PostsController, 'getPostById'])
-  router.get('/posts/:id/full', [PostsController, 'getPostWithRelations'])
+  router.get('/ordered-by-likes/:page/:limit', [PostsController, 'getPostsOrderedByLikes'])
   router.get('/posts', [PostsController, 'getAllPosts'])
   router.get('/posts/:id/comments', [PostsController, 'getPostComments'])
   router.get('/posts/:id/media', [PostsController, 'getPostMediaItems'])

@@ -44,4 +44,6 @@ export default class Posts extends BaseModel {
     foreignKey: 'post_id',
   })
   declare likes: HasMany<typeof PostLikes>
+  content: any
+  userId: any
 }

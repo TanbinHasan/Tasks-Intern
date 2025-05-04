@@ -4,7 +4,7 @@ import User from "#models/users";
 
 @inject()
 export default class PostsService {
-  constructor(private postsQuery: PostsQuery) {}
+  constructor(private postsQuery: PostsQuery) { }
 
   public async getPostById(id: number) {
     const post = await this.postsQuery.findById(id);
@@ -18,20 +18,13 @@ export default class PostsService {
     return post;
   }
 
-  public async getPostWithRelations(id: number) {
-    const post = await this.postsQuery.findByIdWithRelations(id);
-    
-    if (!post) {
-      const error = new Error('Post not found') as any;
-      error.status = 404;
-      throw error;
-    }
-    
-    return post;
-  }
-
+  
   public async getAllPosts(page: number = 1, limit: number = 5) {
     return this.postsQuery.findAll(page, limit);
+  }
+
+  public async getPostsOrderedByLikes(page: number = 1, limit: number = 5) {
+    return this.postsQuery.findAllOrderedByLikes(page, limit);
   }
 
   public async createPost(data: {
@@ -41,13 +34,13 @@ export default class PostsService {
   }) {
     // Verify the user exists before creating the post
     const user = await User.find(data.user_id);
-    
+
     if (!user) {
       const error = new Error(`User with ID ${data.user_id} not found`) as any;
       error.status = 404;
       throw error;
     }
-    
+
     return this.postsQuery.create(data);
   }
 
@@ -117,22 +110,22 @@ export default class PostsService {
 
   public async getPostComments(id: number, offset: number = 0, limit: number = 5) {
     const post = await this.postsQuery.findById(id);
-  
+
     if (!post) {
       const error = new Error('Post not found') as any;
       error.status = 404;
       throw error;
     }
-  
+
     // Get total comment count first
     const totalComments = await this.postsQuery.countPostComments(id);
-    
+
     // Get paginated comments
     const comments = await this.postsQuery.findPostCommentsPaginated(id, offset, limit);
-    
+
     // Determine if there are more comments to load
     const hasMore = offset + comments.length < totalComments;
-    
+
     return {
       comments,
       hasMore
@@ -145,7 +138,7 @@ export default class PostsService {
 
   public async likePost(id: number, userId: number) {
     const post = await this.postsQuery.findById(id);
-    
+
     if (!post) {
       const error = new Error('Post not found') as any;
       error.status = 404;
@@ -158,7 +151,7 @@ export default class PostsService {
       error.status = 400;
       throw error;
     }
-    
+
     const timestamp = Math.floor(Date.now() / 1000);
     return this.postsQuery.createPostLike({
       post_id: id,
@@ -175,7 +168,7 @@ export default class PostsService {
       error.status = 404;
       throw error;
     }
-    
+
     const existingLike = await this.postsQuery.findPostLikeByUser(id, userId);
 
     if (!existingLike) {
@@ -183,13 +176,14 @@ export default class PostsService {
       error.status = 400;
       throw error;
     }
-    
+
     const deleted = await this.postsQuery.deletePostLike(id, userId);
     return deleted;
   }
-  
+
   // Add a new method to check if a user has liked a post
   public async checkUserLiked(postId: number, userId: number) {
     return this.postsQuery.findPostLikeByUser(postId, userId);
   }
+
 }

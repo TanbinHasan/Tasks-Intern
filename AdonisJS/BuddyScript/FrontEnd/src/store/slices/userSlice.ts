@@ -103,7 +103,6 @@ export const logoutUser = createAsyncThunk(
     try {
       console.log('Attempting to logout...'); 
       
-      // IMPORTANT: Clear everything first
       dispatch(clearUserState());
       dispatch(clearPostState());
       

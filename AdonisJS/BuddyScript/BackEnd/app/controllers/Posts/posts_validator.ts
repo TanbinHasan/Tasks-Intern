@@ -14,6 +14,13 @@ export const postsValidator = {
     })
   ),
 
+  getPostsOrderedByLikes: vine.compile(
+    vine.object({
+      page: vine.number().positive().optional(),
+      limit: vine.number().positive().optional()
+    })
+  ),
+
   createPost: vine.compile(
     vine.object({
       text: vine.string().trim().minLength(1).maxLength(5000)

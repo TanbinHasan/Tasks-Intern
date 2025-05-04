@@ -10,61 +10,58 @@ export default class PostsQuery {
     return Posts.find(id);
   }
 
-  public async findByIdWithRelations(id: number) {
-    return Posts.query()
-      .where('id', id)
-      .preload('user')
-      .preload('mediaItems')
-      .preload('comments', (query) => {
-        query
-          .orderBy('timestamp', 'desc')
-          .preload('user')
-          .preload('likes', (likesQuery) => {
-            likesQuery.preload('user');
-          })
-          .preload('replies', (repliesQuery) => {
-            repliesQuery
-              .orderBy('timestamp', 'desc')
-              .preload('user')
-              .preload('likes', (replyLikesQuery) => {
-                replyLikesQuery.preload('user');
-              });
-          });
-      })
-      .preload('likes', (query) => {
-        query.preload('user');
-      })
-      .first();
-  }
-
-  // In posts_query.ts, update the findAll method:
   public async findAll(page: number = 1, limit: number = 5) {
     // Calculate the offset based on page and limit
     const offset = (page - 1) * limit;
-    
+
     const posts = await Posts.query()
-      .preload('user')
+      .preload('user', (query) => {
+        query.select('id', 'name');
+      })
       .preload('mediaItems')
       .preload('comments', (query) => {
         query
           .orderBy('timestamp', 'desc')
-          .preload('user')
+          .preload('user', (query) => {
+            query.select('id', 'name');
+          })
           .preload('likes', (likesQuery) => {
-            likesQuery.preload('user');
+            likesQuery.preload('user', (query) => {
+              query.select('id', 'name');
+            })
           })
           .preload('replies', (repliesQuery) => {
             repliesQuery
               .orderBy('timestamp', 'desc')
-              .preload('user')
+              .preload('user', (query) => {
+                query.select('id', 'name');
+              })
               .preload('likes', (replyLikesQuery) => {
                 replyLikesQuery.preload('user');
               });
           });
       })
       .preload('likes', (query) => {
-        query.preload('user');
+        query.preload('user', (query) => {
+          query.select('id', 'name');
+        })
       })
       .withCount('comments')
+      .orderBy('timestamp', 'desc')
+      .offset(offset)
+      .limit(limit);
+
+    return posts;
+  }
+
+  public async findAllOrderedByLikes(page: number = 1, limit: number = 5) {
+    const offset = (page - 1) * limit;
+
+    const posts = await Posts.query()
+      .select(['id', 'user_id', 'text'])
+      .withCount('likes')
+      .withCount('comments')
+      .orderBy('likes_count', 'desc')
       .orderBy('timestamp', 'desc')
       .offset(offset)
       .limit(limit);
@@ -161,23 +158,27 @@ export default class PostsQuery {
     const result = await Comments.query()
       .where('post_id', postId)
       .count('* as total');
-    
+
     return Number(result[0].$extras.total) || 0;
   }
-  
+
   public async findPostCommentsPaginated(postId: number, offset: number = 0, limit: number = 5) {
     return Comments.query()
       .where('post_id', postId)
-      .orderBy('timestamp', 'desc') // Get newest comments first
+      .orderBy('timestamp', 'desc')
       .offset(offset)
       .limit(limit)
-      .preload('user')
+      .preload('user', (query) => {
+        query.select('id', 'name');
+      })
       .preload('replies', (query) => {
         query
           .orderBy('timestamp', 'desc')
-          .preload('user')
+          .preload('user', (query) => {
+            query.select('id', 'name');
+          })
           .preload('likes');
       })
-      .preload('likes');
+      .preload('likes')
   }
 }

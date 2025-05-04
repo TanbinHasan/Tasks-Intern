@@ -65,7 +65,6 @@ export interface Post {
   user?: {
     id: number;
     name: string;
-    email: string;
   };
   isLikedByCurrentUser?: boolean;
   commentCount?: number;
@@ -90,7 +89,6 @@ interface LikeActionPayload {
   currentUser?: {
     id: number;
     name: string;
-    email?: string;
   };
 }
 
